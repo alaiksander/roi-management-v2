@@ -103,6 +103,5 @@
   @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
 }
 
-.animate-fade-in {
-  @apply animate-fade-in;
-}
+/* Removed the circular dependency */
+/* The animate-fade-in class is already defined in the tailwind.config.ts file */
