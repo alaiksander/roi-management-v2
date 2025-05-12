@@ -15,6 +15,8 @@ import {
 } from "@/lib/mock-data";
 import { ClientEditDialog } from "@/components/clients/ClientEditDialog";
 import { ClientDeleteDialog } from "@/components/clients/ClientDeleteDialog";
+import { CampaignTransactions } from "@/components/campaigns/CampaignTransactions";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 
@@ -28,6 +30,9 @@ const ClientDetailsPage = () => {
   const client = clientId ? getClientById(clientId) : undefined;
   const campaigns = clientId ? getCampaignsByClientId(clientId) : [];
   const transactions = clientId ? getTransactionsByClientId(clientId) : [];
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(
+    campaigns.length > 0 ? campaigns[0].id : null
+  );
   
   const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
   const totalSpent = transactions
@@ -163,63 +168,84 @@ const ClientDetailsPage = () => {
         </div>
         
         {campaigns.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {campaigns.map((campaign) => (
-              <Card key={campaign.id} className="card-hover">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold line-clamp-1">{campaign.name}</h3>
-                      <p className="text-sm text-muted-foreground">{campaign.platform}</p>
+          <div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {campaigns.map((campaign) => (
+                <Card 
+                  key={campaign.id} 
+                  className={`card-hover cursor-pointer ${selectedCampaignId === campaign.id ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setSelectedCampaignId(campaign.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold line-clamp-1">{campaign.name}</h3>
+                        <p className="text-sm text-muted-foreground">{campaign.platform}</p>
+                      </div>
+                      <StatusBadge status={campaign.status} />
                     </div>
-                    <StatusBadge status={campaign.status} />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Start Date</p>
-                      <p className="text-sm font-medium">
-                        {new Date(campaign.startDate).toLocaleDateString('id-ID')}
-                      </p>
+                    
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Start Date</p>
+                        <p className="text-sm font-medium">
+                          {new Date(campaign.startDate).toLocaleDateString('id-ID')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">End Date</p>
+                        <p className="text-sm font-medium">
+                          {campaign.endDate 
+                            ? new Date(campaign.endDate).toLocaleDateString('id-ID')
+                            : 'Ongoing'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">End Date</p>
-                      <p className="text-sm font-medium">
-                        {campaign.endDate 
-                          ? new Date(campaign.endDate).toLocaleDateString('id-ID')
-                          : 'Ongoing'}
-                      </p>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Budget</p>
+                        <p className="text-sm font-medium">{formatCurrency(campaign.budget)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Spent</p>
+                        <p className="text-sm font-medium">{formatCurrency(campaign.spent)}</p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Budget</p>
-                      <p className="text-sm font-medium">{formatCurrency(campaign.budget)}</p>
+                    
+                    <Separator className="my-3" />
+                    
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Revenue</p>
+                        <p className="text-sm font-medium">{formatCurrency(campaign.revenue)}</p>
+                      </div>
+                      <div className="flex items-center text-green-600">
+                        <TrendingUp className="h-4 w-4 mr-1" />
+                        <p className="text-sm font-medium">
+                          {Math.round((campaign.revenue / campaign.spent - 1) * 100)}% ROI
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Spent</p>
-                      <p className="text-sm font-medium">{formatCurrency(campaign.spent)}</p>
-                    </div>
-                  </div>
-                  
-                  <Separator className="my-3" />
-                  
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Revenue</p>
-                      <p className="text-sm font-medium">{formatCurrency(campaign.revenue)}</p>
-                    </div>
-                    <div className="flex items-center text-green-600">
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      <p className="text-sm font-medium">
-                        {Math.round((campaign.revenue / campaign.spent - 1) * 100)}% ROI
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            {/* Selected campaign transactions */}
+            {selectedCampaignId && (
+              <div className="mt-6">
+                {campaigns
+                  .filter(campaign => campaign.id === selectedCampaignId)
+                  .map(campaign => (
+                    <CampaignTransactions 
+                      key={campaign.id}
+                      campaign={campaign}
+                      clientId={client.id}
+                    />
+                  ))}
+              </div>
+            )}
           </div>
         ) : (
           <Card className="p-6 text-center">
