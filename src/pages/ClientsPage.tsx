@@ -8,9 +8,11 @@ import { mockClients, mockCampaigns } from "@/lib/mock-data";
 import { formatCurrency } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Users, Search, Plus } from "lucide-react";
+import { ClientAddDialog } from "@/components/clients/ClientAddDialog";
 
 const ClientsPage = () => {
   const [search, setSearch] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
   // Filter clients based on search
   const filteredClients = mockClients.filter(client => 
@@ -33,7 +35,7 @@ const ClientsPage = () => {
             Manage your clients and their campaigns
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> Add New Client
         </Button>
       </div>
@@ -114,6 +116,12 @@ const ClientsPage = () => {
           </Button>
         </div>
       )}
+      
+      {/* Add client dialog */}
+      <ClientAddDialog 
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+      />
     </div>
   );
 };
