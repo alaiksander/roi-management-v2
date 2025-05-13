@@ -103,7 +103,7 @@ export function CampaignDetailsDialog({
 
           <div className="mt-4">
             <h3 className="text-lg font-medium mb-4">Campaign Transactions</h3>
-            <CampaignTransactions campaignId={campaign.id} />
+            <CampaignTransactions campaign={campaign} clientId={campaign.clientId} />
           </div>
         </div>
       </DialogContent>

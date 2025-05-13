@@ -43,7 +43,7 @@ const formSchema = z.object({
   platform: z.string().min(1, "Platform is required"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().optional(),
-  budget: z.string().transform((val) => parseFloat(val)),
+  budget: z.coerce.number().min(0, "Budget must be positive"),
   status: z.enum(["active", "completed", "paused"]),
 });
 
@@ -62,7 +62,7 @@ export function CampaignAddDialog({
       platform: "",
       startDate: new Date().toISOString().split("T")[0],
       endDate: "",
-      budget: "",
+      budget: 0,
       status: "active",
     },
   });
@@ -75,7 +75,7 @@ export function CampaignAddDialog({
       spent: 0,
       revenue: 0,
       endDate: values.endDate || null,
-      budget: parseFloat(values.budget.toString()),
+      budget: values.budget, // This is now correctly typed as a number from the schema
     };
     
     onAddCampaign(newCampaign);
