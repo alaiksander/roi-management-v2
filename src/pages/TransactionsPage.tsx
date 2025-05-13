@@ -21,20 +21,34 @@ import {
 } from "@/components/ui/table";
 import { mockTransactions, mockClients, mockCampaigns } from "@/lib/mock-data";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Search, ArrowUp, ArrowDown, Plus, Filter } from "lucide-react";
+import { Search, ArrowUp, ArrowDown, Plus, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { Transaction } from "@/lib/types";
+import { TransactionDialog } from "@/components/transactions/TransactionDialog";
+import { TransactionDeleteDialog } from "@/components/transactions/TransactionDeleteDialog";
+import { useToast } from "@/hooks/use-toast";
 
 const TransactionsPage = () => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
   const [campaignFilter, setCampaignFilter] = useState("all");
+  
+  // Transaction management state
+  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentTransaction, setCurrentTransaction] = useState<Transaction | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Total income and expenses calculations
-  const totalIncome = mockTransactions
+  const totalIncome = transactions
     .filter((tx) => tx.type === "income")
     .reduce((sum, tx) => sum + tx.amount, 0);
 
-  const totalExpenses = mockTransactions
+  const totalExpenses = transactions
     .filter((tx) => tx.type === "expense")
     .reduce((sum, tx) => sum + tx.amount, 0);
   
@@ -50,7 +64,7 @@ const TransactionsPage = () => {
   };
 
   // Filter transactions
-  const filteredTransactions = mockTransactions.filter((transaction) => {
+  const filteredTransactions = transactions.filter((transaction) => {
     // Search filter
     const matchesSearch =
       transaction.description.toLowerCase().includes(search.toLowerCase()) ||
@@ -70,6 +84,69 @@ const TransactionsPage = () => {
     return matchesSearch && matchesType && matchesClient && matchesCampaign;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // Transaction CRUD operations
+  const handleAddTransaction = (transactionData: Partial<Transaction>) => {
+    const newTransaction: Transaction = {
+      id: `tx-${Date.now()}`,
+      ...transactionData,
+    } as Transaction;
+
+    setTransactions([...transactions, newTransaction]);
+    toast({
+      title: "Transaction added",
+      description: "New transaction has been added successfully",
+    });
+    setIsAddDialogOpen(false);
+  };
+
+  const handleEditTransaction = (transactionData: Partial<Transaction>) => {
+    setTransactions(
+      transactions.map((t) => 
+        t.id === transactionData.id ? { ...t, ...transactionData } : t
+      )
+    );
+    toast({
+      title: "Transaction updated",
+      description: "Transaction has been updated successfully",
+    });
+    setIsEditDialogOpen(false);
+  };
+
+  const handleDeleteTransaction = () => {
+    if (currentTransaction) {
+      setTransactions(transactions.filter((t) => t.id !== currentTransaction.id));
+      toast({
+        title: "Transaction deleted",
+        description: "Transaction has been deleted successfully",
+        variant: "destructive",
+      });
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const openAddDialog = (clientId?: string, campaignId?: string) => {
+    setSelectedClient(clientId || null);
+    setSelectedCampaign(campaignId || null);
+    setIsAddDialogOpen(true);
+  };
+
+  const openEditDialog = (transaction: Transaction) => {
+    setCurrentTransaction(transaction);
+    setSelectedClient(transaction.clientId);
+    setSelectedCampaign(transaction.campaignId);
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (transaction: Transaction) => {
+    setCurrentTransaction(transaction);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Get campaign to pass to transaction dialog
+  const getCampaign = (campaignId: string) => {
+    return mockCampaigns.find((c) => c.id === campaignId) || mockCampaigns[0];
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -79,7 +156,7 @@ const TransactionsPage = () => {
             Manage and view all financial transactions
           </p>
         </div>
-        <Button>
+        <Button onClick={() => openAddDialog()}>
           <Plus className="mr-2 h-4 w-4" /> Add Transaction
         </Button>
       </div>
@@ -98,6 +175,7 @@ const TransactionsPage = () => {
             </div>
           </CardContent>
         </Card>
+        
         <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
@@ -111,6 +189,7 @@ const TransactionsPage = () => {
             </div>
           </CardContent>
         </Card>
+        
         <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
@@ -187,6 +266,7 @@ const TransactionsPage = () => {
               <TableHead>Campaign</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Description</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -220,6 +300,27 @@ const TransactionsPage = () => {
                 <TableCell>{getCampaignName(transaction.campaignId)}</TableCell>
                 <TableCell>{transaction.category}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{transaction.description}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => openEditDialog(transaction)}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => openDeleteDialog(transaction)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -247,12 +348,57 @@ const TransactionsPage = () => {
             >
               Clear filters
             </Button>
-            <Button>
+            <Button onClick={() => openAddDialog()}>
               <Plus className="mr-2 h-4 w-4" /> Add transaction
             </Button>
           </div>
         </div>
       )}
+
+      {/* Transaction Add Dialog */}
+      {selectedCampaign && (
+        <TransactionDialog
+          open={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          campaign={getCampaign(selectedCampaign)}
+          clientId={selectedClient || ""}
+          mode="add"
+          onSave={handleAddTransaction}
+        />
+      )}
+
+      {/* When no campaign is selected, use the first campaign from the list */}
+      {!selectedCampaign && (
+        <TransactionDialog
+          open={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          campaign={mockCampaigns[0]}
+          clientId={selectedClient || mockClients[0].id}
+          mode="add"
+          onSave={handleAddTransaction}
+        />
+      )}
+
+      {/* Transaction Edit Dialog */}
+      {currentTransaction && selectedCampaign && (
+        <TransactionDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          campaign={getCampaign(selectedCampaign)}
+          clientId={selectedClient || ""}
+          transaction={currentTransaction}
+          mode="edit"
+          onSave={handleEditTransaction}
+        />
+      )}
+
+      {/* Transaction Delete Dialog */}
+      <TransactionDeleteDialog
+        transaction={currentTransaction}
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onDelete={handleDeleteTransaction}
+      />
     </div>
   );
 };
