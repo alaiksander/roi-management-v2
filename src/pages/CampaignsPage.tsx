@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -29,6 +30,7 @@ import { CampaignEditDialog } from "@/components/campaigns/CampaignEditDialog";
 import { CampaignDeleteDialog } from "@/components/campaigns/CampaignDeleteDialog";
 
 const CampaignsPage = () => {
+  const { language, setLanguage } = useLanguage();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
@@ -99,13 +101,14 @@ const CampaignsPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Campaigns</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.campaigns}</h1>
           <p className="text-muted-foreground">
-            Manage your marketing campaigns and track performance
+            {/* TODO: Add to UI_TEXT if needed */}
+            {UI_TEXT.manageCampaigns || "Kelola kampanye pemasaran Anda dan lacak kinerjanya"}
           </p>
         </div>
         <Button onClick={() => setIsAddOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> New Campaign
+          <Plus className="mr-2 h-4 w-4" /> {UI_TEXT.newCampaign || "Kampanye Baru"}
         </Button>
       </div>
 
@@ -114,22 +117,22 @@ const CampaignsPage = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search campaigns..."
-            className="pl-8"
+            placeholder="Cari kampanye atau klien..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="paused">Paused</SelectItem>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="active">Aktif</SelectItem>
+              <SelectItem value="cancelled">Dibatalkan</SelectItem>
+              <SelectItem value="paused">Ditunda</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -139,16 +142,16 @@ const CampaignsPage = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Campaign</TableHead>
-              <TableHead>Client</TableHead>
+              <TableHead>Kampanye</TableHead>
+              <TableHead>Klien</TableHead>
               <TableHead>Platform</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>Budget</TableHead>
-              <TableHead>Spent</TableHead>
-              <TableHead>Revenue</TableHead>
+              <TableHead>Tanggal Mulai</TableHead>
+              <TableHead>Anggaran</TableHead>
+              <TableHead>Pengeluaran</TableHead>
+              <TableHead>Pendapatan</TableHead>
               <TableHead>ROI</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -178,13 +181,7 @@ const CampaignsPage = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => openDetailsDialog(campaign)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      
                       <Button 
                         variant="ghost" 
                         size="icon"
@@ -213,9 +210,9 @@ const CampaignsPage = () => {
           <div className="bg-purple-100 p-3 rounded-full">
             <Briefcase className="h-6 w-6 text-purple-600" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold">No campaigns found</h3>
+          <h3 className="mt-4 text-lg font-semibold">{UI_TEXT.noCampaignsFound || "Tidak ada kampanye"}</h3>
           <p className="text-muted-foreground text-center mt-2">
-            There are no campaigns matching your search criteria.
+            {UI_TEXT.noCampaignsCriteria || "Tidak ada kampanye yang cocok dengan kriteria pencarian Anda."}
           </p>
           <div className="mt-4 flex gap-3">
             <Button 
@@ -225,10 +222,10 @@ const CampaignsPage = () => {
                 setStatusFilter("all");
               }}
             >
-              Clear filters
+              Bersihkan filter
             </Button>
             <Button onClick={() => setIsAddOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Create campaign
+              <Plus className="mr-2 h-4 w-4" /> Buat kampanye
             </Button>
           </div>
         </div>

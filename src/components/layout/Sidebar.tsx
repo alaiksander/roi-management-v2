@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -26,32 +25,32 @@ const Sidebar = ({ className }: SidebarProps) => {
 
   const navItems = [
     {
-      name: "Dashboard",
+      name: "Dasbor",
       icon: <Home size={20} />,
       path: "/",
     },
     {
-      name: "Clients",
+      name: "Klien",
       icon: <Users size={20} />,
       path: "/clients",
     },
     {
-      name: "Campaigns",
+      name: "Kampanye",
       icon: <Briefcase size={20} />,
       path: "/campaigns",
     },
     {
-      name: "Transactions",
+      name: "Transaksi",
       icon: <BarChart3 size={20} />,
       path: "/transactions",
     },
     {
-      name: "Reports",
+      name: "Laporan",
       icon: <FileText size={20} />,
       path: "/reports",
     },
     {
-      name: "Calendar",
+      name: "Kalender",
       icon: <CalendarDays size={20} />,
       path: "/calendar",
     },

@@ -91,8 +91,8 @@ const TransactionsPage = () => {
 
     setTransactions([...transactions, newTransaction]);
     toast({
-      title: "Transaction added",
-      description: "New transaction has been added successfully",
+      title: "Transaksi ditambahkan",
+      description: "Transaksi baru berhasil ditambahkan",
     });
     setIsAddDialogOpen(false);
   };
@@ -104,8 +104,8 @@ const TransactionsPage = () => {
       )
     );
     toast({
-      title: "Transaction updated",
-      description: "Transaction has been updated successfully",
+      title: "Transaksi diperbarui",
+      description: "Transaksi berhasil diperbarui",
     });
     setIsEditDialogOpen(false);
   };
@@ -114,8 +114,8 @@ const TransactionsPage = () => {
     if (currentTransaction) {
       setTransactions(transactions.filter((t) => t.id !== currentTransaction.id));
       toast({
-        title: "Transaction deleted",
-        description: "Transaction has been deleted successfully",
+        title: "Transaksi dihapus",
+        description: "Transaksi berhasil dihapus",
         variant: "destructive",
       });
       setIsDeleteDialogOpen(false);
@@ -140,20 +140,20 @@ const TransactionsPage = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Transaksi</h1>
           <p className="text-muted-foreground">
-            Manage and view all financial transactions
+            Manajemen dan pengelolaan semua transaksi keuangan
           </p>
         </div>
         <Button onClick={() => openAddDialog()}>
-          <Plus className="mr-2 h-4 w-4" /> Add Transaction
+          <Plus className="mr-2 h-4 w-4" /> Tambah Transaksi
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="card-hover">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Pemasukan</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
@@ -167,7 +167,7 @@ const TransactionsPage = () => {
         
         <Card className="card-hover">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Pengeluaran</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
@@ -181,7 +181,7 @@ const TransactionsPage = () => {
         
         <Card className="card-hover">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Pendapatan</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalIncome - totalExpenses)}</div>
@@ -194,7 +194,7 @@ const TransactionsPage = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search transactions..."
+            placeholder="Cari transaksi, klien, atau kampanye..."
             className="pl-8"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -202,23 +202,23 @@ const TransactionsPage = () => {
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-full md:w-[150px]">
-            <SelectValue placeholder="Type" />
+            <SelectValue placeholder="Tipe" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="all">Semua Tipe</SelectItem>
+              <SelectItem value="income">Pemasukan</SelectItem>
+              <SelectItem value="expense">Pengeluaran</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
         <Select value={clientFilter} onValueChange={setClientFilter}>
           <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Client" />
+            <SelectValue placeholder="Klien" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">All Clients</SelectItem>
+              <SelectItem value="all">Semua Klien</SelectItem>
               {mockClients.map((client) => (
                 <SelectItem key={client.id} value={client.id}>
                   {client.name}
@@ -229,11 +229,11 @@ const TransactionsPage = () => {
         </Select>
         <Select value={campaignFilter} onValueChange={setCampaignFilter}>
           <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Campaign" />
+            <SelectValue placeholder="Kampanye" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">All Campaigns</SelectItem>
+              <SelectItem value="all">Semua Kampanye</SelectItem>
               {mockCampaigns.map((campaign) => (
                 <SelectItem key={campaign.id} value={campaign.id}>
                   {campaign.name}
@@ -248,14 +248,14 @@ const TransactionsPage = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Campaign</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Tanggal</TableHead>
+              <TableHead>Tipe</TableHead>
+              <TableHead>Jumlah</TableHead>
+              <TableHead>Klien</TableHead>
+              <TableHead>Kampanye</TableHead>
+              <TableHead>Kategori</TableHead>
+              <TableHead>Deskripsi</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -277,7 +277,7 @@ const TransactionsPage = () => {
                         <ArrowDown className="h-3 w-3" />
                       )}
                     </div>
-                    <span className="capitalize">{transaction.type}</span>
+                    <span className="capitalize">{transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</span>
                   </div>
                 </TableCell>
                 <TableCell className={`font-medium ${
@@ -321,9 +321,9 @@ const TransactionsPage = () => {
           <div className="bg-purple-100 p-3 rounded-full">
             <Filter className="h-6 w-6 text-purple-600" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold">No transactions found</h3>
+          <h3 className="mt-4 text-lg font-semibold">Tidak ada transaksi ditemukan</h3>
           <p className="text-muted-foreground text-center mt-2">
-            There are no transactions matching your current filters.
+            Tidak ada transaksi yang cocok dengan filter Anda.
           </p>
           <div className="mt-4 flex gap-3">
             <Button 
@@ -335,10 +335,10 @@ const TransactionsPage = () => {
                 setCampaignFilter("all");
               }}
             >
-              Clear filters
+              Bersihkan filter
             </Button>
             <Button onClick={() => openAddDialog()}>
-              <Plus className="mr-2 h-4 w-4" /> Add transaction
+              <Plus className="mr-2 h-4 w-4" /> Tambah transaksi
             </Button>
           </div>
         </div>

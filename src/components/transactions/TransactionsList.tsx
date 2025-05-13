@@ -23,7 +23,7 @@ export function TransactionsList({
   if (transactions.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground">
-        No transactions found.
+        Tidak ada transaksi ditemukan.
       </div>
     );
   }
@@ -33,12 +33,12 @@ export function TransactionsList({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>Tanggal</TableHead>
+            <TableHead>Tipe</TableHead>
+            <TableHead>Kategori</TableHead>
+            <TableHead>Jumlah</TableHead>
+            <TableHead>Deskripsi</TableHead>
+            <TableHead className="text-right">Aksi</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -69,7 +69,7 @@ export function TransactionsList({
                     onClick={() => onEdit(transaction)}
                   >
                     <Edit className="h-4 w-4" />
-                    <span className="sr-only">Edit</span>
+                    <span className="sr-only">Ubah</span>
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -78,7 +78,7 @@ export function TransactionsList({
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
+                    <span className="sr-only">Hapus</span>
                   </Button>
                 </div>
               </TableCell>

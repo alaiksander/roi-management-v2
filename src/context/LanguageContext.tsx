@@ -1,93 +1,66 @@
+import React, { useState, ReactNode, useEffect, createContext, useContext } from "react";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+// Semua teks UI dalam Bahasa Indonesia
+export const UI_TEXT = {
+  dashboard: "Dasbor",
+  clients: "Klien",
+  campaigns: "Kampanye",
+  transactions: "Transaksi",
+  reports: "Laporan",
+  calendar: "Kalender",
+  calendarDescription: "Lihat transaksi dan kampanye berdasarkan tanggal",
+  addNew: "Tambah Baru",
+  edit: "Ubah",
+  delete: "Hapus",
+  view: "Lihat",
+  activeCampaigns: "Kampanye Aktif",
+  noClientsFound: "Tidak ada klien yang cocok dengan pencarian Anda.",
+  noCampaignsFound: "Tidak ada kampanye",
+  noCampaignsCriteria: "Tidak ada kampanye yang cocok dengan kriteria pencarian Anda.",
+  save: "Simpan",
+  cancel: "Batal",
+  confirm: "Konfirmasi",
+  search: "Cari",
+  name: "Nama",
+  email: "Surel",
+  phone: "Telepon",
+  status: "Status",
+  date: "Tanggal",
+  amount: "Jumlah",
+  description: "Deskripsi",
+  client: "Klien",
+  campaign: "Kampanye",
+  type: "Tipe",
+  selectLanguage: "Pilih bahasa",
+};
 
-// Define available languages
+// Language type
 export type Language = "en" | "id";
 
-// Define the context shape
-type LanguageContextType = {
+// Language context type
+interface LanguageContextType {
   language: Language;
-  setLanguage: (language: Language) => void;
-  translations: Record<string, string>;
-};
+  setLanguage: (lang: Language) => void;
+}
 
-// Create translations for each language
-const translationDict: Record<Language, Record<string, string>> = {
-  en: {
-    dashboard: "Dashboard",
-    clients: "Clients",
-    campaigns: "Campaigns",
-    transactions: "Transactions",
-    reports: "Reports",
-    calendar: "Calendar",
-    addNew: "Add New",
-    edit: "Edit",
-    delete: "Delete",
-    view: "View",
-    save: "Save",
-    cancel: "Cancel",
-    confirm: "Confirm",
-    search: "Search",
-    name: "Name",
-    email: "Email",
-    phone: "Phone",
-    status: "Status",
-    date: "Date",
-    amount: "Amount",
-    description: "Description",
-    client: "Client",
-    campaign: "Campaign",
-    type: "Type",
-    selectLanguage: "Select language",
-  },
-  id: {
-    dashboard: "Dasbor",
-    clients: "Klien",
-    campaigns: "Kampanye",
-    transactions: "Transaksi",
-    reports: "Laporan",
-    calendar: "Kalender",
-    addNew: "Tambah Baru",
-    edit: "Ubah",
-    delete: "Hapus",
-    view: "Lihat",
-    save: "Simpan",
-    cancel: "Batal",
-    confirm: "Konfirmasi",
-    search: "Cari",
-    name: "Nama",
-    email: "Surel",
-    phone: "Telepon",
-    status: "Status",
-    date: "Tanggal",
-    amount: "Jumlah",
-    description: "Deskripsi",
-    client: "Klien",
-    campaign: "Kampanye",
-    type: "Tipe",
-    selectLanguage: "Pilih bahasa",
-  },
-};
+// Create the context
+export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Create the context with default values
-const LanguageContext = createContext<LanguageContextType>({
-  language: "en",
-  setLanguage: () => {},
-  translations: translationDict.en,
-});
-
-// Create a hook to use the language context
-export const useLanguage = () => useContext(LanguageContext);
+// Custom hook for using the language context
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider");
+  }
+  return context;
+}
 
 // Create the language provider component
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Try to get saved language from localStorage or default to English
-  const [language, setLanguageState] = useState<Language>(() => {
-    const savedLanguage = localStorage.getItem("appLanguage") as Language;
-    return savedLanguage && ["en", "id"].includes(savedLanguage) ? savedLanguage : "en";
-  });
-
-  const translations = translationDict[language];
+  const savedLanguage = localStorage.getItem("appLanguage") as Language | null;
+  const [language, setLanguageState] = useState<Language>(
+    savedLanguage && ["en", "id"].includes(savedLanguage) ? savedLanguage : "en"
+  );
 
   // Update localStorage when language changes
   const setLanguage = (newLanguage: Language) => {
@@ -101,7 +74,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [language]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, translations }}>
+    <LanguageContext.Provider value={{ language, setLanguage }}>
       {children}
     </LanguageContext.Provider>
   );

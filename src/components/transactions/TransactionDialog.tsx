@@ -147,8 +147,8 @@ export function TransactionDialog({
 
     onSave(transactionData);
     toast({
-      title: `Transaction ${mode === "add" ? "added" : "updated"}`,
-      description: `Transaction has been successfully ${mode === "add" ? "added" : "updated"}.`,
+      title: `${mode === "add" ? "Transaksi berhasil ditambahkan" : "Transaksi berhasil diubah"}`,
+      description: `Transaksi berhasil ${mode === "add" ? "ditambahkan" : "diubah"}.`,
     });
     onOpenChange(false);
   };
@@ -158,10 +158,10 @@ export function TransactionDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === "add" ? "Add Transaction" : "Edit Transaction"}
+            {mode === "add" ? "Tambah Transaksi" : "Ubah Transaksi"}
           </DialogTitle>
           <DialogDescription>
-            {mode === "add" ? "Add a new transaction record" : "Update transaction details"}
+            {mode === "add" ? "Tambahkan transaksi baru" : "Ubah detail transaksi"}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -175,7 +175,7 @@ export function TransactionDialog({
                 name="clientId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Client</FormLabel>
+                    <FormLabel>Klien</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -203,7 +203,7 @@ export function TransactionDialog({
                 name="campaignId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Campaign</FormLabel>
+                    <FormLabel>Kampanye</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -234,7 +234,7 @@ export function TransactionDialog({
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>Tanggal</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -248,7 +248,7 @@ export function TransactionDialog({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>Tipe</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -259,8 +259,8 @@ export function TransactionDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="income">Income</SelectItem>
-                        <SelectItem value="expense">Expense</SelectItem>
+                        <SelectItem value="income">Pemasukan</SelectItem>
+                        <SelectItem value="expense">Pengeluaran</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -275,7 +275,7 @@ export function TransactionDialog({
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount (IDR)</FormLabel>
+                    <FormLabel>Jumlah (IDR)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -293,7 +293,7 @@ export function TransactionDialog({
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Kategori</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -322,10 +322,10 @@ export function TransactionDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Deskripsi</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Transaction description"
+                      placeholder="Deskripsi transaksi"
                       className="resize-none"
                       {...field}
                     />
@@ -337,10 +337,10 @@ export function TransactionDialog({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                Batal
               </Button>
               <Button type="submit">
-                {mode === "add" ? "Add Transaction" : "Save Changes"}
+                {mode === "add" ? "Tambah Transaksi" : "Simpan Perubahan"}
               </Button>
             </DialogFooter>
           </form>

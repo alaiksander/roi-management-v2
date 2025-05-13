@@ -12,6 +12,7 @@ import ClientDetailsPage from "./pages/ClientDetailsPage";
 import CampaignsPage from "./pages/CampaignsPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import ReportsPage from "./pages/ReportsPage";
+import AdminPage from "./pages/AdminPage";
 import CalendarPage from "./pages/CalendarPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -25,6 +26,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="clients" element={<ClientsPage />} />

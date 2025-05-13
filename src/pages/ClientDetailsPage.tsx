@@ -44,9 +44,9 @@ const ClientDetailsPage = () => {
   if (!client) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <h1 className="text-2xl font-bold mb-4">Client not found</h1>
+        <h1 className="text-2xl font-bold mb-4">Klien tidak ditemukan</h1>
         <Button onClick={() => navigate('/clients')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Clients
+          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali ke Klien
         </Button>
       </div>
     );
@@ -76,7 +76,7 @@ const ClientDetailsPage = () => {
             <Edit className="mr-2 h-4 w-4" /> Edit
           </Button>
           <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
-            <Trash2 className="mr-2 h-4 w-4" /> Delete
+            <Trash2 className="mr-2 h-4 w-4" /> Hapus
           </Button>
         </div>
       </div>
@@ -85,7 +85,7 @@ const ClientDetailsPage = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Contact Information</CardTitle>
+            <CardTitle className="text-base font-medium">Informasi Kontak</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2">
@@ -109,22 +109,22 @@ const ClientDetailsPage = () => {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Campaigns Overview</CardTitle>
+            <CardTitle className="text-base font-medium">Ringkasan Kampanye</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Campaigns</span>
+              <span className="text-sm text-muted-foreground">Total Kampanye</span>
               <span className="text-sm font-medium">{client.campaigns.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Active Campaigns</span>
+              <span className="text-sm text-muted-foreground">Kampanye Aktif</span>
               <div className="flex items-center">
                 <span className="text-sm font-medium mr-2">{activeCampaigns}</span>
                 {activeCampaigns > 0 && <StatusBadge status="Active" />}
               </div>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">First Campaign</span>
+              <span className="text-sm text-muted-foreground">Kampanye Pertama</span>
               <span className="text-sm font-medium">
                 {campaigns.length > 0 
                   ? new Date(campaigns
@@ -138,19 +138,19 @@ const ClientDetailsPage = () => {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Financial Summary</CardTitle>
+            <CardTitle className="text-base font-medium">Ringkasan Keuangan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Revenue</span>
+              <span className="text-sm text-muted-foreground">Total Pendapatan</span>
               <span className="text-sm font-medium">{formatCurrency(client.totalRevenue)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Spent</span>
+              <span className="text-sm text-muted-foreground">Total Pengeluaran</span>
               <span className="text-sm font-medium">{formatCurrency(totalSpent)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Net Profit</span>
+              <span className="text-sm text-muted-foreground">Keuntungan Bersih</span>
               <span className="text-sm font-medium">{formatCurrency(totalIncome - totalSpent)}</span>
             </div>
           </CardContent>
@@ -160,9 +160,9 @@ const ClientDetailsPage = () => {
       {/* Campaigns list */}
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Campaigns</h2>
+          <h2 className="text-xl font-semibold">Kampanye</h2>
           <Button onClick={() => navigate("/campaigns")}>
-            View All Campaigns
+            Lihat Semua Kampanye
           </Button>
         </div>
         
@@ -186,13 +186,13 @@ const ClientDetailsPage = () => {
                     
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       <div>
-                        <p className="text-xs text-muted-foreground">Start Date</p>
+                        <p className="text-xs text-muted-foreground">Tanggal Mulai</p>
                         <p className="text-sm font-medium">
                           {new Date(campaign.startDate).toLocaleDateString('id-ID')}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">End Date</p>
+                        <p className="text-xs text-muted-foreground">Tanggal Selesai</p>
                         <p className="text-sm font-medium">
                           {campaign.endDate 
                             ? new Date(campaign.endDate).toLocaleDateString('id-ID')
@@ -203,11 +203,11 @@ const ClientDetailsPage = () => {
                     
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <p className="text-xs text-muted-foreground">Budget</p>
+                        <p className="text-xs text-muted-foreground">Anggaran</p>
                         <p className="text-sm font-medium">{formatCurrency(campaign.budget)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Spent</p>
+                        <p className="text-xs text-muted-foreground">Pengeluaran</p>
                         <p className="text-sm font-medium">{formatCurrency(campaign.spent)}</p>
                       </div>
                     </div>
@@ -216,7 +216,7 @@ const ClientDetailsPage = () => {
                     
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="text-xs text-muted-foreground">Revenue</p>
+                        <p className="text-xs text-muted-foreground">Pendapatan</p>
                         <p className="text-sm font-medium">{formatCurrency(campaign.revenue)}</p>
                       </div>
                       <div className="flex items-center text-green-600">
@@ -248,9 +248,9 @@ const ClientDetailsPage = () => {
           </div>
         ) : (
           <Card className="p-6 text-center">
-            <p className="text-muted-foreground mb-4">No campaigns found for this client</p>
+            <p className="text-muted-foreground mb-4">Tidak ada kampanye ditemukan untuk klien ini</p>
             <Button onClick={() => navigate("/campaigns")}>
-              View All Campaigns
+              Lihat Semua Kampanye
             </Button>
           </Card>
         )}
