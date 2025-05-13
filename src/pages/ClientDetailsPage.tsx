@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
-  ArrowLeft, Edit, Trash2, Plus, Building, Mail, Phone, 
+  ArrowLeft, Edit, Trash2, Building, Mail, Phone, 
   CalendarRange, TrendingUp, DollarSign 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -162,8 +161,8 @@ const ClientDetailsPage = () => {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Campaigns</h2>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Add Campaign
+          <Button onClick={() => navigate("/campaigns")}>
+            View All Campaigns
           </Button>
         </div>
         
@@ -250,8 +249,8 @@ const ClientDetailsPage = () => {
         ) : (
           <Card className="p-6 text-center">
             <p className="text-muted-foreground mb-4">No campaigns found for this client</p>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add First Campaign
+            <Button onClick={() => navigate("/campaigns")}>
+              View All Campaigns
             </Button>
           </Card>
         )}
