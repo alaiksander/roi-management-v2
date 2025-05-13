@@ -82,15 +82,17 @@ export function CampaignTransactions({ campaign, clientId }: CampaignTransaction
         onSave={handleAddTransaction}
       />
 
-      <TransactionDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        campaign={campaign}
-        clientId={clientId}
-        transaction={currentTransaction || undefined}
-        mode="edit"
-        onSave={handleEditTransaction}
-      />
+      {currentTransaction && (
+        <TransactionDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          campaign={campaign}
+          clientId={clientId}
+          transaction={currentTransaction}
+          mode="edit"
+          onSave={handleEditTransaction}
+        />
+      )}
 
       <TransactionDeleteDialog
         transaction={currentTransaction}

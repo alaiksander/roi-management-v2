@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { mockTransactions, mockClients, mockCampaigns } from "@/lib/mock-data";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Search, ArrowUp, ArrowDown, Plus, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { Search, ArrowUp, ArrowDown, Plus, Filter, Edit, Trash2 } from "lucide-react";
 import { Transaction } from "@/lib/types";
 import { TransactionDialog } from "@/components/transactions/TransactionDialog";
 import { TransactionDeleteDialog } from "@/components/transactions/TransactionDeleteDialog";
@@ -39,8 +39,6 @@ const TransactionsPage = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState<Transaction | null>(null);
-  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Total income and expenses calculations
@@ -124,27 +122,18 @@ const TransactionsPage = () => {
     }
   };
 
-  const openAddDialog = (clientId?: string, campaignId?: string) => {
-    setSelectedClient(clientId || null);
-    setSelectedCampaign(campaignId || null);
+  const openAddDialog = () => {
     setIsAddDialogOpen(true);
   };
 
   const openEditDialog = (transaction: Transaction) => {
     setCurrentTransaction(transaction);
-    setSelectedClient(transaction.clientId);
-    setSelectedCampaign(transaction.campaignId);
     setIsEditDialogOpen(true);
   };
 
   const openDeleteDialog = (transaction: Transaction) => {
     setCurrentTransaction(transaction);
     setIsDeleteDialogOpen(true);
-  };
-
-  // Get campaign to pass to transaction dialog
-  const getCampaign = (campaignId: string) => {
-    return mockCampaigns.find((c) => c.id === campaignId) || mockCampaigns[0];
   };
 
   return (
@@ -355,44 +344,24 @@ const TransactionsPage = () => {
         </div>
       )}
 
-      {/* Transaction Add Dialog */}
-      {selectedCampaign && (
-        <TransactionDialog
-          open={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
-          campaign={getCampaign(selectedCampaign)}
-          clientId={selectedClient || ""}
-          mode="add"
-          onSave={handleAddTransaction}
-        />
-      )}
+      {/* Transaction Dialog components */}
+      <TransactionDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        mode="add"
+        onSave={handleAddTransaction}
+      />
 
-      {/* When no campaign is selected, use the first campaign from the list */}
-      {!selectedCampaign && (
-        <TransactionDialog
-          open={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
-          campaign={mockCampaigns[0]}
-          clientId={selectedClient || mockClients[0].id}
-          mode="add"
-          onSave={handleAddTransaction}
-        />
-      )}
-
-      {/* Transaction Edit Dialog */}
-      {currentTransaction && selectedCampaign && (
+      {currentTransaction && (
         <TransactionDialog
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
-          campaign={getCampaign(selectedCampaign)}
-          clientId={selectedClient || ""}
           transaction={currentTransaction}
           mode="edit"
           onSave={handleEditTransaction}
         />
       )}
 
-      {/* Transaction Delete Dialog */}
       <TransactionDeleteDialog
         transaction={currentTransaction}
         open={isDeleteDialogOpen}

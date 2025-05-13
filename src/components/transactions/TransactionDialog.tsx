@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -19,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Transaction, Campaign } from "@/lib/types";
+import { Transaction, Campaign, Client } from "@/lib/types";
 import { 
   Select, 
   SelectContent, 
@@ -28,13 +29,14 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { mockClients, mockCampaigns } from "@/lib/mock-data";
 
 interface TransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   transaction?: Transaction;
-  campaign: Campaign;
-  clientId: string;
+  campaign?: Campaign;
+  clientId?: string;
   mode: "add" | "edit";
   onSave: (transaction: Partial<Transaction>) => void;
 }
@@ -45,6 +47,8 @@ interface TransactionFormValues {
   type: "income" | "expense";
   category: string;
   description: string;
+  clientId: string;
+  campaignId: string;
 }
 
 const transactionCategories = [
@@ -62,13 +66,22 @@ export function TransactionDialog({
   open,
   onOpenChange,
   transaction,
-  campaign,
-  clientId,
+  campaign: initialCampaign,
+  clientId: initialClientId,
   mode,
   onSave,
 }: TransactionDialogProps) {
   const { toast } = useToast();
+  const [clients] = useState<Client[]>(mockClients);
+  const [availableCampaigns, setAvailableCampaigns] = useState<Campaign[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string | undefined>(
+    initialClientId || transaction?.clientId
+  );
   
+  // Get all campaigns for the form initialization
+  const allCampaigns = mockCampaigns;
+
+  // Initialize form values
   const defaultValues: TransactionFormValues = transaction
     ? {
         date: transaction.date.split("T")[0],
@@ -76,6 +89,8 @@ export function TransactionDialog({
         type: transaction.type,
         category: transaction.category,
         description: transaction.description,
+        clientId: transaction.clientId,
+        campaignId: transaction.campaignId,
       }
     : {
         date: new Date().toISOString().split("T")[0],
@@ -83,17 +98,46 @@ export function TransactionDialog({
         type: "income",
         category: "Advance Payment",
         description: "",
+        clientId: initialClientId || "",
+        campaignId: initialCampaign?.id || "",
       };
 
   const form = useForm<TransactionFormValues>({
     defaultValues,
   });
 
+  // Update available campaigns when client selection changes
+  useEffect(() => {
+    const clientId = form.watch("clientId");
+    if (clientId) {
+      setSelectedClientId(clientId);
+      const filteredCampaigns = allCampaigns.filter(campaign => campaign.clientId === clientId);
+      setAvailableCampaigns(filteredCampaigns);
+      
+      // If current campaign selection is not valid for the new client, reset it
+      const currentCampaignId = form.watch("campaignId");
+      const isCampaignValid = filteredCampaigns.some(c => c.id === currentCampaignId);
+      if (!isCampaignValid && filteredCampaigns.length > 0) {
+        form.setValue("campaignId", filteredCampaigns[0].id);
+      }
+    } else {
+      setAvailableCampaigns([]);
+    }
+  }, [form.watch("clientId")]);
+
+  // Initialize available campaigns on component mount
+  useEffect(() => {
+    if (selectedClientId) {
+      const filteredCampaigns = allCampaigns.filter(campaign => campaign.clientId === selectedClientId);
+      setAvailableCampaigns(filteredCampaigns);
+    }
+  }, []);
+
   const handleSubmit = (values: TransactionFormValues) => {
     const transactionData: Partial<Transaction> = {
       ...(transaction?.id ? { id: transaction.id } : {}),
-      clientId,
-      campaignId: campaign.id,
+      clientId: values.clientId,
+      campaignId: values.campaignId,
       date: values.date,
       amount: parseFloat(values.amount),
       type: values.type,
@@ -107,7 +151,6 @@ export function TransactionDialog({
       description: `Transaction has been successfully ${mode === "add" ? "added" : "updated"}.`,
     });
     onOpenChange(false);
-    form.reset(defaultValues);
   };
 
   return (
@@ -117,12 +160,74 @@ export function TransactionDialog({
           <DialogTitle>
             {mode === "add" ? "Add Transaction" : "Edit Transaction"}
           </DialogTitle>
+          <DialogDescription>
+            {mode === "add" ? "Add a new transaction record" : "Update transaction details"}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-4 py-4"
           >
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="clientId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select client" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="campaignId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Campaign</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={!selectedClientId || availableCampaigns.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select campaign" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableCampaigns.map((campaign) => (
+                          <SelectItem key={campaign.id} value={campaign.id}>
+                            {campaign.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
