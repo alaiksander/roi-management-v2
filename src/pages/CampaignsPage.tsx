@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -22,12 +21,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { calculateROI, formatCurrency, formatDate } from "@/lib/utils";
-import { Briefcase, Search, Plus, ArrowUp } from "lucide-react";
+import { Briefcase, Search, Plus, ArrowUp, Eye, Edit, Trash2 } from "lucide-react";
+import { Campaign } from "@/lib/types";
+import { CampaignDetailsDialog } from "@/components/campaigns/CampaignDetailsDialog";
+import { CampaignAddDialog } from "@/components/campaigns/CampaignAddDialog";
+import { CampaignEditDialog } from "@/components/campaigns/CampaignEditDialog";
+import { CampaignDeleteDialog } from "@/components/campaigns/CampaignDeleteDialog";
 
 const CampaignsPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
   
+  // Dialog states
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
   // Get clientName by clientId
   const getClientName = (clientId: string) => {
     const client = mockClients.find((c) => c.id === clientId);
@@ -35,7 +47,7 @@ const CampaignsPage = () => {
   };
 
   // Filter campaigns based on search and status
-  const filteredCampaigns = mockCampaigns.filter((campaign) => {
+  const filteredCampaigns = campaigns.filter((campaign) => {
     const matchesSearch =
       campaign.name.toLowerCase().includes(search.toLowerCase()) ||
       getClientName(campaign.clientId).toLowerCase().includes(search.toLowerCase());
@@ -46,8 +58,45 @@ const CampaignsPage = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Handle adding a campaign
+  const handleAddCampaign = (newCampaign: Campaign) => {
+    setCampaigns([...campaigns, newCampaign]);
+  };
+
+  // Handle updating a campaign
+  const handleUpdateCampaign = (id: string, updatedData: Partial<Campaign>) => {
+    setCampaigns(
+      campaigns.map((campaign) =>
+        campaign.id === id ? { ...campaign, ...updatedData } : campaign
+      )
+    );
+  };
+
+  // Handle deleting a campaign
+  const handleDeleteCampaign = (id: string) => {
+    setCampaigns(campaigns.filter((campaign) => campaign.id !== id));
+  };
+
+  // Open campaign details dialog
+  const openDetailsDialog = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setIsDetailsOpen(true);
+  };
+
+  // Open campaign edit dialog
+  const openEditDialog = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setIsEditOpen(true);
+  };
+
+  // Open campaign delete dialog
+  const openDeleteDialog = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setIsDeleteOpen(true);
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Campaigns</h1>
@@ -55,7 +104,7 @@ const CampaignsPage = () => {
             Manage your marketing campaigns and track performance
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> New Campaign
         </Button>
       </div>
@@ -99,6 +148,7 @@ const CampaignsPage = () => {
               <TableHead>Revenue</TableHead>
               <TableHead>ROI</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -107,9 +157,7 @@ const CampaignsPage = () => {
               return (
                 <TableRow key={campaign.id}>
                   <TableCell className="font-medium">
-                    <Link to={`/campaigns/${campaign.id}`} className="hover:text-purple-600 hover:underline">
-                      {campaign.name}
-                    </Link>
+                    {campaign.name}
                   </TableCell>
                   <TableCell>{getClientName(campaign.clientId)}</TableCell>
                   <TableCell>{campaign.platform}</TableCell>
@@ -127,6 +175,31 @@ const CampaignsPage = () => {
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={campaign.status} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => openDetailsDialog(campaign)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => openEditDialog(campaign)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => openDeleteDialog(campaign)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -154,12 +227,39 @@ const CampaignsPage = () => {
             >
               Clear filters
             </Button>
-            <Button>
+            <Button onClick={() => setIsAddOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Create campaign
             </Button>
           </div>
         </div>
       )}
+
+      {/* Dialogs */}
+      <CampaignDetailsDialog 
+        campaign={selectedCampaign} 
+        open={isDetailsOpen} 
+        onOpenChange={setIsDetailsOpen}
+      />
+      
+      <CampaignAddDialog 
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        onAddCampaign={handleAddCampaign}
+      />
+      
+      <CampaignEditDialog 
+        campaign={selectedCampaign}
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        onUpdateCampaign={handleUpdateCampaign}
+      />
+      
+      <CampaignDeleteDialog 
+        campaign={selectedCampaign}
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        onDeleteCampaign={handleDeleteCampaign}
+      />
     </div>
   );
 };
