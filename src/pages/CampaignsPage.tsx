@@ -1,4 +1,4 @@
-
+// React component
 import React, { useState } from "react";
 import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -104,11 +104,11 @@ const CampaignsPage = () => {
           <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.campaigns}</h1>
           <p className="text-muted-foreground">
             {/* TODO: Add to UI_TEXT if needed */}
-            {UI_TEXT.manageCampaigns || "Kelola kampanye pemasaran Anda dan lacak kinerjanya"}
+            "Kelola kampanye pemasaran Anda dan lacak kinerjanya"
           </p>
         </div>
         <Button onClick={() => setIsAddOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> {UI_TEXT.newCampaign || "Kampanye Baru"}
+          <Plus className="mr-2 h-4 w-4" /> Kampanye Baru"
         </Button>
       </div>
 

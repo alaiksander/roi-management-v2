@@ -29,8 +29,8 @@ export function ClientDeleteDialog({ client, open, onOpenChange }: ClientDeleteD
     console.log("Deleting client:", client.id);
     
     toast({
-      title: "Client deleted",
-      description: "Client has been deleted successfully",
+      title: "Klien terhapus",
+      description: "Klien berhasil dihapus",
       variant: "destructive",
     });
     
@@ -44,16 +44,15 @@ export function ClientDeleteDialog({ client, open, onOpenChange }: ClientDeleteD
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle>Apakah kamu yakin?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete the client "{client.name}" from {client.company} 
-            and all associated data. This action cannot be undone.
+            Tindakan ini akan menghapus klien "{client.name}" dari {client.company} dan semua data terkait. Tindakan ini tidak bisa dibatalkan!
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
           <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-            Delete
+            Hapus
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

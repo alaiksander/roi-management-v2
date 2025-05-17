@@ -77,9 +77,9 @@ const Sidebar = ({ className }: SidebarProps) => {
           )}
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-600 text-white">
-            MF
+            JK
           </div>
-          {!collapsed && <span className="text-lg">MarketFinance</span>}
+          {!collapsed && <span className="text-lg">JurnalKas</span>}
         </Link>
         <Button
           variant="ghost"

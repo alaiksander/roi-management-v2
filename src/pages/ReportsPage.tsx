@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,11 +67,14 @@ import {
 
 const ReportsPage = () => {
   const [selectedReportTab, setSelectedReportTab] = useState("saved");
-const [savedReports, setSavedReports] = useState(mockReports);
+  const [savedReports, setSavedReports] = useState(mockReports);
   const [isNewReportDialogOpen, setIsNewReportDialogOpen] = useState(false);
   const [newReportName, setNewReportName] = useState("");
+  const [amount, setAmount] = useState("");
   const { firstDate, lastDate } = getFirstAndLastTransactionDates(mockTransactions);
-  
+  const handleDeleteReport = (idx: number) => {
+    setSavedReports((prev) => prev.filter((_, i) => i !== idx));
+  };
   const [filters, setFilters] = useState<ReportFilter>({
     startDate: firstDate,
     endDate: lastDate,
@@ -126,6 +128,50 @@ const [savedReports, setSavedReports] = useState(mockReports);
   };
   
   const handleCreateReport = () => {
+    if (!newReportName.trim()) {
+      if (window && window.alert) {
+        window.alert("Nama laporan tidak boleh kosong!");
+      }
+      return;
+    }
+    if (newReportName.length > MAX_REPORT_NAME_LENGTH) {
+      if (window && window.alert) {
+        window.alert(`Nama laporan maksimal ${MAX_REPORT_NAME_LENGTH} karakter.`);
+      }
+      return;
+    }
+    if (FORBIDDEN_CHARS_REGEX.test(newReportName)) {
+      if (window && window.alert) {
+        window.alert("Nama laporan tidak boleh mengandung karakter khusus: / \\ : * ? \" < > |");
+      }
+      return;
+    }
+    if (savedReports.some(
+      (report) => report.name.trim().toLowerCase() === newReportName.trim().toLowerCase()
+    )) {
+      if (window && window.alert) {
+        window.alert("Nama laporan sudah ada. Gunakan nama lain.");
+      }
+      return;
+    }
+    if (!filters.startDate || !filters.endDate) {
+      if (window && window.alert) {
+        window.alert("Tanggal mulai dan tanggal akhir harus diisi.");
+      }
+      return;
+    }
+    if (new Date(filters.startDate) > new Date(filters.endDate)) {
+      if (window && window.alert) {
+        window.alert("Tanggal mulai tidak boleh setelah tanggal akhir.");
+      }
+      return;
+    }
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      if (window && window.alert) {
+        window.alert("Jumlah harus berupa angka positif.");
+      }
+      return;
+    }
     // Buat laporan baru dan tambahkan ke daftar laporan tersimpan
     const newReport = {
       id: `laporan-${Date.now()}`,
@@ -140,6 +186,8 @@ const [savedReports, setSavedReports] = useState(mockReports);
         netProfit,
         roi,
       },
+      dateGenerated: new Date().toISOString(),
+      filters: { ...filters },
     };
     setSavedReports((prev) => [newReport, ...prev]);
     setIsNewReportDialogOpen(false);
@@ -150,6 +198,32 @@ const [savedReports, setSavedReports] = useState(mockReports);
       window.alert(`Laporan "${newReportName}" berhasil disimpan!`);
     }
   };
+
+  // Check if the new report name already exists (case-insensitive, trimmed)
+  const isDuplicateName = savedReports.some(
+    (report) => report.name.trim().toLowerCase() === newReportName.trim().toLowerCase()
+  );
+
+  // Add a constant for max length
+  const MAX_REPORT_NAME_LENGTH = 50;
+
+  // Add a regex for forbidden characters in file names
+  const FORBIDDEN_CHARS_REGEX = /[\/\\:\*\?"<>\|]/;
+
+  // Helper to check for forbidden characters
+  const hasForbiddenChars = FORBIDDEN_CHARS_REGEX.test(newReportName);
+
+  // Helper to check if start date is after end date
+  const isInvalidDateRange =
+    filters.startDate && filters.endDate
+      ? new Date(filters.startDate) > new Date(filters.endDate)
+      : false;
+
+  // Helper to check if date fields are empty
+  const isDateFieldEmpty = !filters.startDate || !filters.endDate;
+
+  // Helper to check if amount is a positive number
+  const isAmountInvalid = !amount || isNaN(Number(amount)) || Number(amount) <= 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -479,6 +553,7 @@ const [savedReports, setSavedReports] = useState(mockReports);
                 value={newReportName}
                 onChange={(e) => setNewReportName(e.target.value)}
                 placeholder="Kinerja Q1 2025"
+                maxLength={MAX_REPORT_NAME_LENGTH}
               />
             </div>
             <div className="space-y-2">
@@ -509,6 +584,24 @@ const [savedReports, setSavedReports] = useState(mockReports);
                 </div>
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Jumlah</Label>
+              <Input
+                id="amount"
+                type="number"
+                min={0}
+                step="any"
+                value={amount}
+                onChange={(e) => {
+                  // Only allow numeric input and prevent negative values
+                  const val = e.target.value;
+                  if (/^\d*\.?\d*$/.test(val)) {
+                    setAmount(val);
+                  }
+                }}
+                placeholder="Jumlah (hanya angka positif)"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button 
@@ -517,24 +610,18 @@ const [savedReports, setSavedReports] = useState(mockReports);
             >
               Batal
             </Button>
-            <Button onClick={() => {
-              const newReport = {
-                name: newReportName,
-                dateRange: {
-                  start: filters.startDate,
-                  end: filters.endDate,
-                },
-                summary: {
-                  totalIncome,
-                  totalExpense: totalExpenses,
-                  netProfit,
-                  roi,
-                },
-              };
-              setSavedReports((prev) => [...prev, newReport]);
-              setIsNewReportDialogOpen(false);
-              toast.success('Laporan berhasil disimpan!');
-            }} disabled={!newReportName.trim()}>
+            <Button 
+              onClick={handleCreateReport}
+              disabled={
+                !newReportName.trim() ||
+                isDuplicateName ||
+                newReportName.length > MAX_REPORT_NAME_LENGTH ||
+                hasForbiddenChars ||
+                isInvalidDateRange ||
+                isDateFieldEmpty ||
+                isAmountInvalid
+              }
+            >
               Simpan Laporan
             </Button>
           </DialogFooter>
@@ -566,3 +653,7 @@ function handleDeleteReport(idx: number) {
 }
 
 export default ReportsPage;
+function setSavedReports(arg0: (prev: any) => any) {
+  throw new Error("Function not implemented.");
+}
+

@@ -73,9 +73,9 @@ export function ClientAddDialog({ open, onOpenChange }: ClientAddDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add New Client</DialogTitle>
+          <DialogTitle>Tambah Klien Baru</DialogTitle>
           <DialogDescription>
-            Fill in the client's information. Click save when you're done.
+            Masukkan informasi klien. Klik simpan setelah selesai.
           </DialogDescription>
         </DialogHeader>
         
@@ -86,7 +86,7 @@ export function ClientAddDialog({ open, onOpenChange }: ClientAddDialogProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Nama</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -100,7 +100,7 @@ export function ClientAddDialog({ open, onOpenChange }: ClientAddDialogProps) {
               name="company"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Company</FormLabel>
+                  <FormLabel>Perusahaan</FormLabel>
                   <FormControl>
                     <Input placeholder="Acme Inc." {...field} />
                   </FormControl>
@@ -128,7 +128,7 @@ export function ClientAddDialog({ open, onOpenChange }: ClientAddDialogProps) {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Telepon</FormLabel>
                   <FormControl>
                     <Input type="tel" placeholder="+62 812 3456 7890" {...field} />
                   </FormControl>
@@ -139,9 +139,9 @@ export function ClientAddDialog({ open, onOpenChange }: ClientAddDialogProps) {
             
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                Batal
               </Button>
-              <Button type="submit">Add Client</Button>
+              <Button type="submit">Tambah Klien</Button>
             </DialogFooter>
           </form>
         </Form>
