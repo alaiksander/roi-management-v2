@@ -1,3 +1,4 @@
+import SidebarFeedbackWaitlist from "@/components/SidebarFeedbackWaitlist";
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,8 @@ import {
   LogOut,
   CalendarDays,
 } from "lucide-react";
+import path from "path";
+
 
 interface SidebarProps {
   className?: string;
@@ -110,6 +113,8 @@ const Sidebar = ({ className }: SidebarProps) => {
           ))}
         </nav>
       </div>
+      <SidebarFeedbackWaitlist />
+      {/* Add more items here */}
       <div className="mt-auto border-t p-4">
         <Button
           variant="outline"
