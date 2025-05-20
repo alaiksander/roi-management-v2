@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ import {
   UserPlus,
   Search
 } from "lucide-react";
-import AdminSidebar from "../components/admin/AdminSidebar";
 
 // User Management Tab Content
 function UsersManagement() {
@@ -251,6 +249,12 @@ function SubscriptionsManagement() {
     { id: 4, name: "Kartu Kredit", enabled: false }
   ]);
 
+  const [activeSubscriptions, setActiveSubscriptions] = useState([
+    { id: 1, userId: "user-1", email: "johndoe@example.com", plan: "Pro", startDate: "2025-04-01", endDate: "2025-05-01", status: "active" },
+    { id: 2, userId: "user-2", email: "janedoe@example.com", plan: "Basic", startDate: "2025-04-15", endDate: "2025-05-15", status: "active" },
+    { id: 3, userId: "user-3", email: "robertsmith@example.com", plan: "Enterprise", startDate: "2025-03-10", endDate: "2025-04-10", status: "expired" }
+  ]);
+
   const togglePaymentMethod = (id: number) => {
     setPaymentMethods(methods => 
       methods.map(method => 
@@ -258,6 +262,44 @@ function SubscriptionsManagement() {
       )
     );
     toast.success("Metode pembayaran diperbarui");
+  };
+
+  const updateSubscriptionPlan = (id: number, field: string, value: string | number) => {
+    setSubscriptions(plans =>
+      plans.map(plan =>
+        plan.id === id ? { ...plan, [field]: value } : plan
+      )
+    );
+    toast.success("Paket berhasil diperbarui");
+  };
+
+  const handleSavePlan = (id: number) => {
+    toast.success(`Perubahan pada paket berhasil disimpan`);
+  };
+
+  const renewSubscription = (id: number) => {
+    setActiveSubscriptions(subs =>
+      subs.map(sub =>
+        sub.id === id ? { 
+          ...sub, 
+          status: "active", 
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
+        } : sub
+      )
+    );
+    toast.success("Langganan berhasil diperpanjang");
+  };
+
+  const cancelSubscription = (id: number) => {
+    if (window.confirm("Yakin ingin membatalkan langganan ini?")) {
+      setActiveSubscriptions(subs =>
+        subs.map(sub =>
+          sub.id === id ? { ...sub, status: "cancelled" } : sub
+        )
+      );
+      toast.success("Langganan berhasil dibatalkan");
+    }
   };
 
   return (
@@ -270,8 +312,21 @@ function SubscriptionsManagement() {
           <div className="grid md:grid-cols-3 gap-4">
             {subscriptions.map(sub => (
               <div key={sub.id} className="border rounded-lg p-4 shadow-sm">
-                <h3 className="text-lg font-bold">{sub.name}</h3>
-                <p className="text-xl font-semibold my-2">Rp {sub.price.toLocaleString()}/bulan</p>
+                <input 
+                  className="text-lg font-bold w-full mb-2 border-b pb-2" 
+                  value={sub.name} 
+                  onChange={(e) => updateSubscriptionPlan(sub.id, 'name', e.target.value)}
+                />
+                <div className="flex items-center mb-2">
+                  <span className="text-sm mr-1">Rp</span>
+                  <input 
+                    className="text-xl font-semibold w-full" 
+                    type="number"
+                    value={sub.price} 
+                    onChange={(e) => updateSubscriptionPlan(sub.id, 'price', parseInt(e.target.value))}
+                  />
+                  <span className="text-sm">/bulan</span>
+                </div>
                 <ul className="mt-3 space-y-1">
                   {sub.features.map((feature, idx) => (
                     <li key={idx} className="text-sm flex items-center gap-2">
@@ -280,7 +335,12 @@ function SubscriptionsManagement() {
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full mt-4">Edit Paket</Button>
+                <Button 
+                  className="w-full mt-4"
+                  onClick={() => handleSavePlan(sub.id)}
+                >
+                  Simpan Perubahan
+                </Button>
               </div>
             ))}
           </div>
@@ -309,6 +369,75 @@ function SubscriptionsManagement() {
                 </Button>
               </div>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Langganan Aktif</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full bg-white rounded-md shadow text-sm">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 border text-left">Pengguna</th>
+                  <th className="p-2 border text-left">Email</th>
+                  <th className="p-2 border text-left">Paket</th>
+                  <th className="p-2 border text-left">Mulai</th>
+                  <th className="p-2 border text-left">Berakhir</th>
+                  <th className="p-2 border text-left">Status</th>
+                  <th className="p-2 border text-left">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeSubscriptions.map(sub => (
+                  <tr key={sub.id} className="border-b hover:bg-gray-50">
+                    <td className="p-2 border">{sub.userId}</td>
+                    <td className="p-2 border">{sub.email}</td>
+                    <td className="p-2 border">{sub.plan}</td>
+                    <td className="p-2 border">{sub.startDate}</td>
+                    <td className="p-2 border">{sub.endDate}</td>
+                    <td className="p-2 border">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        sub.status === 'active' ? 'bg-green-100 text-green-800' : 
+                        sub.status === 'expired' ? 'bg-red-100 text-red-800' : 
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {sub.status === 'active' ? 'Aktif' : 
+                         sub.status === 'expired' ? 'Kedaluwarsa' : 
+                         'Dibatalkan'}
+                      </span>
+                    </td>
+                    <td className="p-2 border">
+                      <div className="flex gap-2">
+                        {sub.status !== 'active' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 hover:text-green-800 hover:bg-green-50 h-8"
+                            onClick={() => renewSubscription(sub.id)}
+                          >
+                            Perpanjang
+                          </Button>
+                        )}
+                        {sub.status === 'active' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50 h-8"
+                            onClick={() => cancelSubscription(sub.id)}
+                          >
+                            Batalkan
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
@@ -613,76 +742,71 @@ export default function AdminPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen bg-background">
-        <AdminSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="border-b bg-card px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="md:hidden"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </Button>
-              <h1 className="text-xl font-semibold">Admin Dashboard</h1>
-            </div>
-            <div className="hidden md:block">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-5 w-auto">
-                  {ADMIN_TABS.map((tab) => (
-                    <TabsTrigger
-                      key={tab.id}
-                      value={tab.id}
-                      className="flex items-center gap-2"
-                    >
-                      {tab.icon}
-                      <span className="hidden lg:inline">{tab.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
-            <div className="w-10">
-              {/* Spacer for balanced header */}
-            </div>
-          </header>
-          
-          {/* Mobile Menu */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden border-b bg-card">
-              <nav className="flex flex-col p-2">
-                {ADMIN_TABS.map((tab) => (
-                  <Button
-                    key={tab.id}
-                    variant={activeTab === tab.id ? "secondary" : "ghost"}
-                    className="justify-start mb-1"
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    <span className="mr-2">{tab.icon}</span>
-                    {tab.label}
-                  </Button>
-                ))}
-              </nav>
-            </div>
-          )}
-          
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
-            <Tabs value={activeTab}>
-              {ADMIN_TABS.map((tab) => (
-                <TabsContent key={tab.id} value={tab.id} className="mt-0">
-                  {tab.component}
-                </TabsContent>
-              ))}
-            </Tabs>
-          </main>
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="md:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </Button>
+          <h1 className="text-xl font-semibold">Admin Dashboard</h1>
         </div>
-      </div>
-    </SidebarProvider>
+        <div className="hidden md:block">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-5 w-auto">
+              {ADMIN_TABS.map((tab) => (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="flex items-center gap-2"
+                >
+                  {tab.icon}
+                  <span className="hidden lg:inline">{tab.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+        <div className="w-10">
+          {/* Spacer for balanced header */}
+        </div>
+      </header>
+      
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-b bg-card">
+          <nav className="flex flex-col p-2">
+            {ADMIN_TABS.map((tab) => (
+              <Button
+                key={tab.id}
+                variant={activeTab === tab.id ? "secondary" : "ghost"}
+                className="justify-start mb-1"
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+              </Button>
+            ))}
+          </nav>
+        </div>
+      )}
+      
+      <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <Tabs value={activeTab}>
+          {ADMIN_TABS.map((tab) => (
+            <TabsContent key={tab.id} value={tab.id} className="mt-0">
+              {tab.component}
+            </TabsContent>
+          ))}
+        </Tabs>
+      </main>
+    </div>
   );
 }
