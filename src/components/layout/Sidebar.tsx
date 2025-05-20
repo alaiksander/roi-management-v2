@@ -69,6 +69,8 @@ const Sidebar = () => {
     active: true,
     plan: "Pro",
     expiresAt: "2025-06-20",
+    daysLeft: 30, // Show days left until expiration
+    paymentMethod: "Transfer Bank"
   };
 
   return (
@@ -114,9 +116,17 @@ const Sidebar = () => {
                 )}
               </div>
               {subscription.active && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Berakhir pada {subscription.expiresAt}
-                </p>
+                <>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Berakhir pada {subscription.expiresAt}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {subscription.daysLeft} hari tersisa
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Metode: {subscription.paymentMethod}
+                  </p>
+                </>
               )}
               <div className="mt-2">
                 <Button 
