@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 // Placeholder components for each admin feature
 import { mockUsers, User } from "../lib/mock-users";
+import { Client } from "../lib/types"; // Import the Client type
 
 function UsersManagement() {
   const [users, setUsers] = useState<User[]>(mockUsers);
@@ -20,7 +21,7 @@ function UsersManagement() {
     setShowModal(true);
   }
 
-  function openEdit(user: Client) {
+  function openEdit(user: User) { // Changed type from Client to User
     setEditingUser(user);
     setForm({
       name: user.name,
@@ -153,7 +154,7 @@ function UsersManagement() {
                 required
               />
             </div>
-            <div className="mb-2">
+            <div className="mb-4">
               <label className="block mb-1">Telepon</label>
               <input
                 className="w-full border rounded px-2 py-1"
@@ -162,17 +163,7 @@ function UsersManagement() {
                 required
               />
             </div>
-            <div className="mb-4">
-              <label className="block mb-1">Total Revenue</label>
-              <input
-                className="w-full border rounded px-2 py-1"
-                type="number"
-                value={form.totalRevenue}
-                onChange={(e) => setForm((f) => ({ ...f, totalRevenue: Number(e.target.value) }))}
-                required
-                min={0}
-              />
-            </div>
+            {/* Removed totalRevenue field as it doesn't exist in the User type */}
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
@@ -286,4 +277,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
