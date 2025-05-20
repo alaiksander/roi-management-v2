@@ -1,7 +1,16 @@
-import SidebarFeedbackWaitlist from "@/components/SidebarFeedbackWaitlist";
-import React, { useState } from "react";
+
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import {
+  Sidebar as ShadcnSidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
   BarChart3,
@@ -9,21 +18,12 @@ import {
   Home,
   Users,
   Briefcase,
-  Menu,
-  X,
-  ChevronRight,
   LogOut,
   CalendarDays,
 } from "lucide-react";
-import path from "path";
+import SidebarFeedbackWaitlist from "@/components/SidebarFeedbackWaitlist";
 
-
-interface SidebarProps {
-  className?: string;
-}
-
-const Sidebar = ({ className }: SidebarProps) => {
-  const [collapsed, setCollapsed] = useState(false);
+const Sidebar = () => {
   const location = useLocation();
 
   const navItems = [
@@ -59,84 +59,47 @@ const Sidebar = ({ className }: SidebarProps) => {
     },
   ];
 
-  const toggleSidebar = () => {
-    setCollapsed(!collapsed);
-  };
-
   return (
-    <div
-      className={cn(
-        "relative flex h-screen flex-col bg-white border-r transition-all duration-300",
-        collapsed ? "w-16" : "w-64",
-        className
-      )}
-    >
-      <div className="flex h-14 items-center border-b px-3 py-4">
-        <Link
-          to="/"
-          className={cn(
-            "flex items-center gap-2 font-semibold",
-            collapsed && "justify-center"
-          )}
-        >
+    <ShadcnSidebar>
+      <SidebarHeader>
+        <Link to="/" className="flex items-center gap-2 px-2 py-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-600 text-white">
             JK
           </div>
-          {!collapsed && <span className="text-lg">JurnalKas</span>}
+          <span className="text-lg font-semibold">JurnalKas</span>
         </Link>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className={cn("ml-auto", !collapsed && "rotate-180")}
-        >
-          <ChevronRight size={16} />
-        </Button>
-      </div>
-      <div className="flex-1 overflow-auto py-2">
-        <nav className="grid gap-1 px-2">
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarMenu>
           {navItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={cn(
-                "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent transition-colors",
-                location.pathname === item.path
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-                collapsed && "justify-center"
-              )}
-            >
-              <span>{item.icon}</span>
-              {!collapsed && <span>{item.name}</span>}
-            </Link>
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton
+                asChild
+                isActive={location.pathname === item.path}
+                tooltip={item.name}
+              >
+                <Link to={item.path} className="flex items-center gap-3">
+                  {item.icon}
+                  <span>{item.name}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           ))}
-        </nav>
-      </div>
-      <SidebarFeedbackWaitlist />
-      {/* Add more items here */}
-      <div className="mt-auto border-t p-4">
-        <Button
-          variant="outline"
-          className={cn(
-            "flex w-full items-center gap-2",
-            collapsed && "justify-center"
-          )}
-        >
-          <LogOut size={18} />
-          {!collapsed && <span>Logout</span>}
-        </Button>
-      </div>
-      {/* Mobile sidebar toggle */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute right-0 top-4 -translate-x-1/2 translate-y-1/2 md:hidden"
-        onClick={toggleSidebar}
-      >
-        {collapsed ? <Menu size={16} /> : <X size={16} />}
-      </Button>
-    </div>
+        </SidebarMenu>
+        
+        <div className="px-4 mt-4">
+          <SidebarFeedbackWaitlist />
+        </div>
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="p-2">
+          <Button variant="outline" className="w-full flex items-center gap-2">
+            <LogOut size={18} />
+            <span>Logout</span>
+          </Button>
+        </div>
+      </SidebarFooter>
+    </ShadcnSidebar>
   );
 };
 

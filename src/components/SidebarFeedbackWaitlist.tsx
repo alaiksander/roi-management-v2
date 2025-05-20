@@ -1,3 +1,4 @@
+
 import React from "react";
 import { MessageCircle, UserPlus } from "lucide-react";
 
@@ -5,7 +6,7 @@ const FEEDBACK_LINK = "https://docs.google.com/forms/d/e/1FAIpQLScURp5VNNPrie9LD
 const WAITLIST_LINK = "https://docs.google.com/forms/d/e/1FAIpQLSfBgaSSMY6lPBotm8Ew_TRX55VX5Opgngf1eFDQhux5JKEkjQ/viewform?usp=header";
 
 const SidebarFeedbackWaitlist = () => (
-  <div className="flex flex-col gap-3 mt-8 px-4">
+  <div className="flex flex-col gap-3">
     <a
       href={FEEDBACK_LINK}
       target="_blank"
