@@ -612,8 +612,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("users");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const currentTab = ADMIN_TABS.find((tab) => tab.id === activeTab);
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
@@ -632,20 +630,20 @@ export default function AdminPage() {
               <h1 className="text-xl font-semibold">Admin Dashboard</h1>
             </div>
             <div className="hidden md:block">
-              <TabsList className="grid grid-cols-5 w-auto">
-                {ADMIN_TABS.map((tab) => (
-                  <TabsTrigger
-                    key={tab.id}
-                    value={tab.id}
-                    className="flex items-center gap-2"
-                    onClick={() => setActiveTab(tab.id)}
-                    data-state={activeTab === tab.id ? "active" : ""}
-                  >
-                    {tab.icon}
-                    <span className="hidden lg:inline">{tab.label}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid grid-cols-5 w-auto">
+                  {ADMIN_TABS.map((tab) => (
+                    <TabsTrigger
+                      key={tab.id}
+                      value={tab.id}
+                      className="flex items-center gap-2"
+                    >
+                      {tab.icon}
+                      <span className="hidden lg:inline">{tab.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
             </div>
             <div className="w-10">
               {/* Spacer for balanced header */}
@@ -675,9 +673,13 @@ export default function AdminPage() {
           )}
           
           <main className="flex-1 p-4 md:p-6 overflow-auto">
-            <TabsContent value={activeTab} className="mt-0" forceMount>
-              {currentTab?.component}
-            </TabsContent>
+            <Tabs value={activeTab}>
+              {ADMIN_TABS.map((tab) => (
+                <TabsContent key={tab.id} value={tab.id} className="mt-0">
+                  {tab.component}
+                </TabsContent>
+              ))}
+            </Tabs>
           </main>
         </div>
       </div>
