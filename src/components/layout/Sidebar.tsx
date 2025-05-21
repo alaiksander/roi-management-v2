@@ -25,19 +25,23 @@ import {
   CalendarDays,
   Settings,
   CreditCard,
+  Upload,
 } from "lucide-react";
 import SidebarFeedbackWaitlist from "@/components/SidebarFeedbackWaitlist";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const Sidebar = () => {
   const location = useLocation();
   const [manageSubscriptionOpen, setManageSubscriptionOpen] = useState(false);
-  const [paymentMethodOpen, setPaymentMethodOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
+  const [transferProof, setTransferProof] = useState<File | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
 
   const navItems = [
     {
@@ -80,6 +84,7 @@ const Sidebar = () => {
     daysLeft: 30, // Show days left until expiration
     paymentMethod: "Transfer Bank",
     duration: 6, // Duration in months
+    pendingRenewal: false
   };
 
   // Mock subscription plans
@@ -145,6 +150,15 @@ const Sidebar = () => {
       return;
     }
 
+    if (selectedPaymentMethod === "Transfer Bank") {
+      setManageSubscriptionOpen(false);
+      setUploadDialogOpen(true);
+    } else {
+      submitSubscription();
+    }
+  };
+
+  const submitSubscription = () => {
     const plan = subscriptionPlans.find(p => p.name === selectedPlan);
     if (!plan) {
       toast.error("Paket tidak ditemukan");
@@ -157,10 +171,31 @@ const Sidebar = () => {
       return;
     }
 
-    // In a real app, this would initiate a payment process
-    toast.success(`Berlangganan ${selectedPlan} untuk ${selectedDuration} bulan dengan ${selectedPaymentMethod}`);
+    // In a real app, this would send the data to your backend
+    toast.success(`Permintaan berlangganan ${selectedPlan} untuk ${selectedDuration} bulan dengan ${selectedPaymentMethod} telah dikirim`);
     setManageSubscriptionOpen(false);
-    setPaymentMethodOpen(false);
+    setUploadDialogOpen(false);
+    setRenewConfirmOpen(false);
+    // Reset state
+    setTransferProof(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setTransferProof(e.target.files[0]);
+    }
+  };
+
+  const handleUploadProof = () => {
+    if (!transferProof) {
+      toast.error("Silakan unggah bukti transfer terlebih dahulu");
+      return;
+    }
+
+    // In a real app, this would upload the file to your storage
+    toast.success("Bukti transfer berhasil diunggah");
+    setUploadDialogOpen(false);
+    setRenewConfirmOpen(true);
   };
 
   const handleManageSubscription = () => {
@@ -209,12 +244,22 @@ const Sidebar = () => {
         <SidebarGroup>
           <SidebarGroupLabel>Langganan</SidebarGroupLabel>
           <div className="px-3 py-2">
-            <div className={`rounded-lg border p-3 ${subscription.active ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+            <div className={`rounded-lg border p-3 ${
+              subscription.active ? 'border-green-500 bg-green-50' : 
+              subscription.pendingRenewal ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'
+            }`}>
               <div className="flex justify-between items-center">
-                <span className="font-medium">{subscription.active ? subscription.plan : 'Tidak Aktif'}</span>
+                <span className="font-medium">
+                  {subscription.active ? subscription.plan : subscription.pendingRenewal ? 'Menunggu Persetujuan' : 'Tidak Aktif'}
+                </span>
                 {subscription.active && (
                   <span className="text-xs px-2 py-1 rounded-full bg-green-200 text-green-800">
                     Aktif
+                  </span>
+                )}
+                {subscription.pendingRenewal && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">
+                    Pending
                   </span>
                 )}
               </div>
@@ -234,12 +279,18 @@ const Sidebar = () => {
                   </p>
                 </>
               )}
+              {subscription.pendingRenewal && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Menunggu verifikasi pembayaran
+                </p>
+              )}
               <div className="mt-2">
                 <Button 
                   variant="outline" 
                   className="w-full text-sm" 
                   size="sm"
                   onClick={handleManageSubscription}
+                  disabled={subscription.pendingRenewal}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
                   {subscription.active ? 'Kelola Langganan' : 'Berlangganan'}
@@ -355,6 +406,73 @@ const Sidebar = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Upload proof of transfer dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Unggah Bukti Transfer</DialogTitle>
+            <DialogDescription>
+              Silakan unggah bukti transfer Anda untuk melanjutkan proses berlangganan
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="border-2 border-dashed rounded-lg p-6 text-center">
+              <div className="flex justify-center mb-4">
+                <Upload size={40} className="text-gray-400" />
+              </div>
+              <p className="text-sm text-gray-500 mb-2">
+                Klik untuk unggah atau seret dan lepas file bukti transfer Anda
+              </p>
+              <input 
+                type="file" 
+                id="proof" 
+                className="hidden" 
+                accept="image/*,.pdf"
+                onChange={handleFileChange}
+              />
+              <label htmlFor="proof">
+                <Button variant="outline" className="relative">
+                  Pilih File
+                </Button>
+              </label>
+              {transferProof && (
+                <div className="mt-4 text-sm">
+                  <span className="font-semibold">File terpilih:</span> {transferProof.name}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button 
+              onClick={handleUploadProof} 
+              disabled={!transferProof}
+            >
+              Unggah dan Lanjutkan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation after upload */}
+      <AlertDialog open={renewConfirmOpen} onOpenChange={setRenewConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permintaan Berlangganan Dikirim</AlertDialogTitle>
+            <AlertDialogDescription>
+              Terima kasih telah mengunggah bukti transfer Anda. Permintaan berlangganan sedang diproses dan akan diverifikasi oleh admin. Anda akan menerima notifikasi setelah permintaan Anda disetujui.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={submitSubscription}>
+              Mengerti
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ShadcnSidebar>
   );
 };

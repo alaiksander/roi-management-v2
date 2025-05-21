@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +15,14 @@ import {
   UserPlus,
   Search
 } from "lucide-react";
+import SubscriptionPlanEditor from "@/components/admin/SubscriptionPlanEditor";
+import PaymentMethodsManager from "@/components/admin/PaymentMethodsManager";
+import ActiveSubscriptionsTable from "@/components/admin/ActiveSubscriptionsTable";
+import SubscriptionRequestsList from "@/components/admin/SubscriptionRequestsList";
+import { Subscription } from "@/components/admin/ActiveSubscriptionsTable";
+import { PaymentMethod } from "@/components/admin/PaymentMethodsManager";
+import { SubscriptionPlan } from "@/components/admin/SubscriptionPlanEditor";
+import { SubscriptionRequest } from "@/components/admin/SubscriptionRequestsList";
 
 // User Management Tab Content
 function UsersManagement() {
@@ -236,7 +243,7 @@ function UsersManagement() {
 
 // Subscription Management Tab Content
 function SubscriptionsManagement() {
-  const [subscriptions, setSubscriptions] = useState([
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([
     { 
       id: 1, 
       name: "Basic", 
@@ -275,43 +282,43 @@ function SubscriptionsManagement() {
     }
   ]);
   
-  const [paymentMethods, setPaymentMethods] = useState([
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
     { id: 1, name: "QRIS", enabled: true },
     { id: 2, name: "Transfer Bank", enabled: true },
     { id: 3, name: "E-Wallet", enabled: false },
     { id: 4, name: "Kartu Kredit", enabled: false }
   ]);
 
-  const [activeSubscriptions, setActiveSubscriptions] = useState([
+  const [activeSubscriptions, setActiveSubscriptions] = useState<Subscription[]>([
     { id: 1, userId: "user-1", email: "johndoe@example.com", plan: "Pro", startDate: "2025-04-01", endDate: "2025-05-01", status: "active", duration: 1, paymentMethod: "Transfer Bank" },
     { id: 2, userId: "user-2", email: "janedoe@example.com", plan: "Basic", startDate: "2025-04-15", endDate: "2025-07-15", status: "active", duration: 3, paymentMethod: "QRIS" },
     { id: 3, userId: "user-3", email: "robertsmith@example.com", plan: "Enterprise", startDate: "2025-03-10", endDate: "2025-04-10", status: "expired", duration: 1, paymentMethod: "QRIS" }
   ]);
 
-  const [editingDuration, setEditingDuration] = useState(null);
-  const [newDuration, setNewDuration] = useState({ months: 0, priceMultiplier: 0, isPopular: false });
-
-  const togglePaymentMethod = (id: number) => {
-    setPaymentMethods(methods => 
-      methods.map(method => 
-        method.id === id ? {...method, enabled: !method.enabled} : method
-      )
-    );
-    toast.success("Metode pembayaran diperbarui");
-  };
-
-  const updateSubscriptionPlan = (id: number, field: string, value: string | number) => {
-    setSubscriptions(plans =>
-      plans.map(plan =>
-        plan.id === id ? { ...plan, [field]: value } : plan
-      )
-    );
-    toast.success("Paket berhasil diperbarui");
-  };
-
-  const handleSavePlan = (id: number) => {
-    toast.success(`Perubahan pada paket berhasil disimpan`);
-  };
+  const [subscriptionRequests, setSubscriptionRequests] = useState<SubscriptionRequest[]>([
+    {
+      id: 1,
+      userId: "user-4",
+      email: "maria@example.com",
+      plan: "Pro",
+      duration: 6,
+      requestDate: "2025-05-18",
+      paymentMethod: "Transfer Bank",
+      proofUrl: "https://via.placeholder.com/800x600",
+      status: "pending"
+    },
+    {
+      id: 2,
+      userId: "user-5",
+      email: "alex@example.com",
+      plan: "Basic",
+      duration: 3,
+      requestDate: "2025-05-19",
+      paymentMethod: "Transfer Bank",
+      proofUrl: "https://via.placeholder.com/800x600",
+      status: "pending"
+    }
+  ]);
 
   const renewSubscription = (id: number) => {
     setActiveSubscriptions(subs =>
@@ -338,78 +345,6 @@ function SubscriptionsManagement() {
     }
   };
 
-  const addDuration = (planId: number) => {
-    if (newDuration.months <= 0 || newDuration.priceMultiplier <= 0) {
-      toast.error("Masa berlaku dan pengali harga harus lebih dari 0");
-      return;
-    }
-
-    setSubscriptions(plans =>
-      plans.map(plan => {
-        if (plan.id === planId) {
-          const newDurationId = Math.max(...plan.durations.map(d => d.id)) + 1;
-          return {
-            ...plan,
-            durations: [
-              ...plan.durations,
-              {
-                id: newDurationId,
-                months: newDuration.months,
-                priceMultiplier: newDuration.priceMultiplier,
-                isPopular: newDuration.isPopular
-              }
-            ]
-          };
-        }
-        return plan;
-      })
-    );
-    setNewDuration({ months: 0, priceMultiplier: 0, isPopular: false });
-    toast.success("Durasi langganan berhasil ditambahkan");
-  };
-
-  const removeDuration = (planId: number, durationId: number) => {
-    setSubscriptions(plans =>
-      plans.map(plan => {
-        if (plan.id === planId) {
-          return {
-            ...plan,
-            durations: plan.durations.filter(d => d.id !== durationId)
-          };
-        }
-        return plan;
-      })
-    );
-    toast.success("Durasi langganan berhasil dihapus");
-  };
-
-  const togglePopular = (planId: number, durationId: number) => {
-    setSubscriptions(plans =>
-      plans.map(plan => {
-        if (plan.id === planId) {
-          return {
-            ...plan,
-            durations: plan.durations.map(d => ({
-              ...d,
-              isPopular: d.id === durationId ? !d.isPopular : false
-            }))
-          };
-        }
-        return plan;
-      })
-    );
-    toast.success("Status popularitas berhasil diperbarui");
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', { 
-      style: 'currency', 
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
-
   const extendSubscription = (id: number, additionalMonths: number) => {
     setActiveSubscriptions(subs =>
       subs.map(sub => {
@@ -429,108 +364,98 @@ function SubscriptionsManagement() {
     toast.success(`Langganan diperpanjang ${additionalMonths} bulan`);
   };
 
+  const approveSubscriptionRequest = (id: number) => {
+    const request = subscriptionRequests.find(req => req.id === id);
+    
+    if (request) {
+      // Find existing user subscription
+      const existingSubscription = activeSubscriptions.find(
+        sub => sub.userId === request.userId
+      );
+
+      if (existingSubscription) {
+        // Extend existing subscription
+        const currentEndDate = new Date(existingSubscription.endDate);
+        const newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + request.duration));
+        
+        setActiveSubscriptions(subscriptions => 
+          subscriptions.map(sub => 
+            sub.userId === request.userId 
+              ? { 
+                  ...sub, 
+                  endDate: newEndDate.toISOString().split('T')[0],
+                  status: "active",
+                  plan: request.plan,
+                  duration: sub.duration + request.duration,
+                  paymentMethod: request.paymentMethod
+                } 
+              : sub
+          )
+        );
+      } else {
+        // Create new subscription
+        const startDate = new Date().toISOString().split('T')[0];
+        const endDate = new Date(new Date().setMonth(new Date().getMonth() + request.duration)).toISOString().split('T')[0];
+        
+        const newSubscription: Subscription = {
+          id: activeSubscriptions.length + 1,
+          userId: request.userId,
+          email: request.email,
+          plan: request.plan,
+          startDate,
+          endDate,
+          status: "active",
+          duration: request.duration,
+          paymentMethod: request.paymentMethod
+        };
+        
+        setActiveSubscriptions([...activeSubscriptions, newSubscription]);
+      }
+      
+      // Update request status
+      setSubscriptionRequests(requests => 
+        requests.map(req => 
+          req.id === id ? { ...req, status: "approved" } : req
+        )
+      );
+      
+      toast.success("Permintaan berlangganan disetujui");
+    }
+  };
+
+  const rejectSubscriptionRequest = (id: number) => {
+    setSubscriptionRequests(requests => 
+      requests.map(req => 
+        req.id === id ? { ...req, status: "rejected" } : req
+      )
+    );
+    toast.success("Permintaan berlangganan ditolak");
+  };
+
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Permintaan Berlangganan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SubscriptionRequestsList 
+            requests={subscriptionRequests} 
+            onApprove={approveSubscriptionRequest} 
+            onReject={rejectSubscriptionRequest}
+          />
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>Paket Langganan</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 gap-4">
-            {subscriptions.map(sub => (
-              <div key={sub.id} className="border rounded-lg p-4 shadow-sm">
-                <input 
-                  className="text-lg font-bold w-full mb-2 border-b pb-2" 
-                  value={sub.name} 
-                  onChange={(e) => updateSubscriptionPlan(sub.id, 'name', e.target.value)}
-                />
-                <div className="flex items-center mb-2">
-                  <span className="text-sm mr-1">Rp</span>
-                  <input 
-                    className="text-xl font-semibold w-full" 
-                    type="number"
-                    value={sub.price} 
-                    onChange={(e) => updateSubscriptionPlan(sub.id, 'price', parseInt(e.target.value))}
-                  />
-                  <span className="text-sm">/bulan</span>
-                </div>
-                <ul className="mt-3 space-y-1">
-                  {sub.features.map((feature, idx) => (
-                    <li key={idx} className="text-sm flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Duration options */}
-                <div className="mt-4 border-t pt-3">
-                  <h4 className="text-sm font-medium mb-2">Durasi Langganan</h4>
-                  <div className="space-y-2">
-                    {sub.durations.map(duration => (
-                      <div key={duration.id} className="flex items-center justify-between text-sm border-b pb-2">
-                        <div>
-                          <span className="font-medium">{duration.months} bulan</span>
-                          {duration.isPopular && (
-                            <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full">
-                              Populer
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>{formatPrice(sub.price * duration.priceMultiplier)}</span>
-                          <button
-                            className="text-blue-600 hover:text-blue-800 p-1"
-                            onClick={() => togglePopular(sub.id, duration.id)}
-                          >
-                            {duration.isPopular ? "Hapus Populer" : "Set Populer"}
-                          </button>
-                          <button
-                            className="text-red-600 hover:text-red-800 p-1"
-                            onClick={() => removeDuration(sub.id, duration.id)}
-                          >
-                            Hapus
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Add new duration */}
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="number"
-                      placeholder="Bulan"
-                      className="border rounded px-2 py-1 w-16 text-sm"
-                      value={newDuration.months || ""}
-                      onChange={(e) => setNewDuration({...newDuration, months: parseInt(e.target.value) || 0})}
-                    />
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="Pengali"
-                      className="border rounded px-2 py-1 w-20 text-sm"
-                      value={newDuration.priceMultiplier || ""}
-                      onChange={(e) => setNewDuration({...newDuration, priceMultiplier: parseFloat(e.target.value) || 0})}
-                    />
-                    <button
-                      className="text-white bg-blue-600 hover:bg-blue-700 rounded px-2 py-1 text-sm"
-                      onClick={() => addDuration(sub.id)}
-                    >
-                      Tambah
-                    </button>
-                  </div>
-                </div>
-
-                <Button 
-                  className="w-full mt-4"
-                  onClick={() => handleSavePlan(sub.id)}
-                >
-                  Simpan Perubahan
-                </Button>
-              </div>
-            ))}
-          </div>
+          <SubscriptionPlanEditor 
+            plans={subscriptionPlans} 
+            onUpdatePlans={setSubscriptionPlans} 
+          />
         </CardContent>
       </Card>
       
@@ -539,24 +464,10 @@ function SubscriptionsManagement() {
           <CardTitle>Metode Pembayaran</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-4">
-            {paymentMethods.map(method => (
-              <div key={method.id} className="flex justify-between items-center border rounded-lg p-4">
-                <div>
-                  <h3 className="font-medium">{method.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {method.enabled ? "Aktif" : "Tidak Aktif"}
-                  </p>
-                </div>
-                <Button 
-                  variant={method.enabled ? "default" : "outline"}
-                  onClick={() => togglePaymentMethod(method.id)}
-                >
-                  {method.enabled ? "Nonaktifkan" : "Aktifkan"}
-                </Button>
-              </div>
-            ))}
-          </div>
+          <PaymentMethodsManager 
+            paymentMethods={paymentMethods} 
+            onUpdatePaymentMethods={setPaymentMethods} 
+          />
         </CardContent>
       </Card>
 
@@ -565,91 +476,12 @@ function SubscriptionsManagement() {
           <CardTitle>Langganan Aktif</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full bg-white rounded-md shadow text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border text-left">Pengguna</th>
-                  <th className="p-2 border text-left">Email</th>
-                  <th className="p-2 border text-left">Paket</th>
-                  <th className="p-2 border text-left">Mulai</th>
-                  <th className="p-2 border text-left">Berakhir</th>
-                  <th className="p-2 border text-left">Durasi</th>
-                  <th className="p-2 border text-left">Pembayaran</th>
-                  <th className="p-2 border text-left">Status</th>
-                  <th className="p-2 border text-left">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeSubscriptions.map(sub => (
-                  <tr key={sub.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2 border">{sub.userId}</td>
-                    <td className="p-2 border">{sub.email}</td>
-                    <td className="p-2 border">{sub.plan}</td>
-                    <td className="p-2 border">{sub.startDate}</td>
-                    <td className="p-2 border">{sub.endDate}</td>
-                    <td className="p-2 border">{sub.duration} bulan</td>
-                    <td className="p-2 border">{sub.paymentMethod}</td>
-                    <td className="p-2 border">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        sub.status === 'active' ? 'bg-green-100 text-green-800' : 
-                        sub.status === 'expired' ? 'bg-red-100 text-red-800' : 
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {sub.status === 'active' ? 'Aktif' : 
-                         sub.status === 'expired' ? 'Kedaluwarsa' : 
-                         'Dibatalkan'}
-                      </span>
-                    </td>
-                    <td className="p-2 border">
-                      <div className="flex flex-col gap-2">
-                        {sub.status !== 'active' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-green-600 hover:text-green-800 hover:bg-green-50 h-8 w-full"
-                            onClick={() => renewSubscription(sub.id)}
-                          >
-                            Perpanjang
-                          </Button>
-                        )}
-                        {sub.status === 'active' && (
-                          <>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 h-8"
-                                onClick={() => extendSubscription(sub.id, 1)}
-                              >
-                                +1 Bulan
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 h-8"
-                                onClick={() => extendSubscription(sub.id, 3)}
-                              >
-                                +3 Bulan
-                              </Button>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-800 hover:bg-red-50 h-8"
-                              onClick={() => cancelSubscription(sub.id)}
-                            >
-                              Batalkan
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ActiveSubscriptionsTable 
+            subscriptions={activeSubscriptions}
+            onRenew={renewSubscription}
+            onCancel={cancelSubscription}
+            onExtend={extendSubscription}
+          />
         </CardContent>
       </Card>
     </div>
