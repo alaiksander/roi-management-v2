@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { Edit, Trash2, Plus, Filter } from "lucide-react";
+import { TransactionCategory } from "@/lib/types";
 
 export type TransactionCategory = {
   id: string;
@@ -48,14 +48,27 @@ export type TransactionCategory = {
 };
 
 const CategoryManager = () => {
-  // Mock initial categories - in real app, fetch from backend
-  const [categories, setCategories] = useState<TransactionCategory[]>([
-    { id: "cat-1", name: "Salary", type: "income" },
-    { id: "cat-2", name: "Freelance", type: "income" },
-    { id: "cat-3", name: "Advertising", type: "expense" },
-    { id: "cat-4", name: "Content Creation", type: "expense" },
-    { id: "cat-5", name: "Consulting", type: "both" },
-  ]);
+  // Load categories from localStorage or use defaults
+  const [categories, setCategories] = useState<TransactionCategory[]>([]);
+  
+  // Load categories from localStorage on component mount
+  useEffect(() => {
+    const storedCategories = localStorage.getItem("transactionCategories");
+    if (storedCategories) {
+      setCategories(JSON.parse(storedCategories));
+    } else {
+      // Default categories if none exist
+      const defaultCategories: TransactionCategory[] = [
+        { id: "cat-1", name: "Salary", type: "income" },
+        { id: "cat-2", name: "Freelance", type: "income" },
+        { id: "cat-3", name: "Advertising", type: "expense" },
+        { id: "cat-4", name: "Content Creation", type: "expense" },
+        { id: "cat-5", name: "Consulting", type: "both" },
+      ];
+      setCategories(defaultCategories);
+      localStorage.setItem("transactionCategories", JSON.stringify(defaultCategories));
+    }
+  }, []);
 
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
@@ -79,6 +92,11 @@ const CategoryManager = () => {
     return matchesSearch && matchesType;
   });
 
+  // Save categories to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("transactionCategories", JSON.stringify(categories));
+  }, [categories]);
+
   // Add new category
   const handleAddCategory = () => {
     if (!newCategory.name || !newCategory.type) {
@@ -87,7 +105,10 @@ const CategoryManager = () => {
     }
 
     const id = `cat-${Date.now()}`;
-    setCategories([...categories, { ...newCategory as TransactionCategory, id }]);
+    const updatedCategories = [...categories, { ...newCategory as TransactionCategory, id }];
+    setCategories(updatedCategories);
+    localStorage.setItem("transactionCategories", JSON.stringify(updatedCategories));
+    
     toast.success("Kategori berhasil ditambahkan");
     setIsAddDialogOpen(false);
     resetNewCategory();
@@ -100,11 +121,12 @@ const CategoryManager = () => {
       return;
     }
 
-    setCategories(
-      categories.map(cat => 
-        cat.id === currentCategory.id ? currentCategory : cat
-      )
+    const updatedCategories = categories.map(cat => 
+      cat.id === currentCategory.id ? currentCategory : cat
     );
+    
+    setCategories(updatedCategories);
+    localStorage.setItem("transactionCategories", JSON.stringify(updatedCategories));
     
     toast.success("Kategori berhasil diperbarui");
     setIsEditDialogOpen(false);
@@ -113,7 +135,10 @@ const CategoryManager = () => {
   // Delete category
   const handleDeleteCategory = () => {
     if (currentCategory) {
-      setCategories(categories.filter(cat => cat.id !== currentCategory.id));
+      const updatedCategories = categories.filter(cat => cat.id !== currentCategory.id);
+      setCategories(updatedCategories);
+      localStorage.setItem("transactionCategories", JSON.stringify(updatedCategories));
+      
       toast.success("Kategori berhasil dihapus");
       setIsDeleteDialogOpen(false);
     }

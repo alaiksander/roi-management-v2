@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Transaction, Campaign, Client } from "@/lib/types";
+import { Transaction, Campaign, Client, TransactionCategory } from "@/lib/types";
 import { 
   Select, 
   SelectContent, 
@@ -51,17 +51,6 @@ interface TransactionFormValues {
   campaignId: string;
 }
 
-const transactionCategories = [
-  "Ad Spend", 
-  "Advance Payment", 
-  "Final Payment", 
-  "Interim Payment",
-  "Content Creation",
-  "Analytics Fee",
-  "Consulting Fee",
-  "Other"
-];
-
 export function TransactionDialog({
   open,
   onOpenChange,
@@ -77,9 +66,47 @@ export function TransactionDialog({
   const [selectedClientId, setSelectedClientId] = useState<string | undefined>(
     initialClientId || transaction?.clientId
   );
+  const [selectedType, setSelectedType] = useState<"income" | "expense">(
+    transaction?.type || "income"
+  );
+  
+  // Fetch categories from localStorage or use default categories
+  const [categories, setCategories] = useState<TransactionCategory[]>([]);
   
   // Get all campaigns for the form initialization
   const allCampaigns = mockCampaigns;
+
+  // Load categories on component mount
+  useEffect(() => {
+    try {
+      const storedCategories = localStorage.getItem("transactionCategories");
+      if (storedCategories) {
+        setCategories(JSON.parse(storedCategories));
+      } else {
+        // Default categories if none exist in localStorage
+        const defaultCategories: TransactionCategory[] = [
+          { id: "cat-1", name: "Ad Spend", type: "expense" },
+          { id: "cat-2", name: "Advance Payment", type: "income" },
+          { id: "cat-3", name: "Final Payment", type: "income" },
+          { id: "cat-4", name: "Content Creation", type: "expense" },
+          { id: "cat-5", name: "Analytics Fee", type: "expense" },
+          { id: "cat-6", name: "Consulting Fee", type: "both" },
+          { id: "cat-7", name: "Other", type: "both" },
+        ];
+        setCategories(defaultCategories);
+        localStorage.setItem("transactionCategories", JSON.stringify(defaultCategories));
+      }
+    } catch (error) {
+      console.error("Error loading transaction categories:", error);
+      // Fallback to empty categories array
+      setCategories([]);
+    }
+  }, []);
+
+  // Filter categories based on selected transaction type
+  const filteredCategories = categories.filter(cat => 
+    cat.type === selectedType || cat.type === "both"
+  );
 
   // Initialize form values
   const defaultValues: TransactionFormValues = transaction
@@ -96,7 +123,7 @@ export function TransactionDialog({
         date: new Date().toISOString().split("T")[0],
         amount: "",
         type: "income",
-        category: "Advance Payment",
+        category: filteredCategories.length > 0 ? filteredCategories[0].name : "",
         description: "",
         clientId: initialClientId || "",
         campaignId: initialCampaign?.id || "",
@@ -124,6 +151,20 @@ export function TransactionDialog({
       setAvailableCampaigns([]);
     }
   }, [form.watch("clientId")]);
+
+  // Watch for type changes to update filtered categories
+  useEffect(() => {
+    const type = form.watch("type");
+    setSelectedType(type);
+    
+    // Reset category if current selection is not valid for the new type
+    const currentCategory = form.watch("category");
+    const isValidCategory = filteredCategories.some(cat => cat.name === currentCategory);
+    
+    if (!isValidCategory && filteredCategories.length > 0) {
+      form.setValue("category", filteredCategories[0].name);
+    }
+  }, [form.watch("type"), categories]);
 
   // Initialize available campaigns on component mount
   useEffect(() => {
@@ -304,11 +345,17 @@ export function TransactionDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {transactionCategories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        {filteredCategories.length > 0 ? (
+                          filteredCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.name}>
+                              {category.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            No categories available
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
