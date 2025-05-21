@@ -40,13 +40,6 @@ import { toast } from "@/components/ui/sonner";
 import { Edit, Trash2, Plus, Filter } from "lucide-react";
 import { TransactionCategory } from "@/lib/types";
 
-export type TransactionCategory = {
-  id: string;
-  name: string;
-  type: "income" | "expense" | "both";
-  color?: string;
-};
-
 const CategoryManager = () => {
   // Load categories from localStorage or use defaults
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
