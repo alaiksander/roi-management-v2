@@ -26,6 +26,7 @@ import {
   Settings,
   CreditCard,
   Upload,
+  List,
 } from "lucide-react";
 import SidebarFeedbackWaitlist from "@/components/SidebarFeedbackWaitlist";
 import { useState } from "react";
@@ -63,6 +64,11 @@ const Sidebar = () => {
       name: "Transaksi",
       icon: <BarChart3 size={20} />,
       path: "/transactions",
+    },
+    {
+      name: "Kategori",
+      icon: <List size={20} />,
+      path: "/categories",
     },
     {
       name: "Laporan",
