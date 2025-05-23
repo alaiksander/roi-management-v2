@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
+      // If we reach here, the credentials are invalid
       throw new Error("Email atau password salah");
     } catch (err) {
       if (err instanceof Error) {
@@ -121,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (data: Partial<User>) => {
     try {
       setLoading(true);
+      setError(null);
       if (!user) throw new Error("User not authenticated");
       
       const updatedUser = { ...user, ...data };

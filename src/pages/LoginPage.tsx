@@ -35,7 +35,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
-  const { login, user } = useAuth();
+  const { login, user, error } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   
@@ -63,7 +63,11 @@ const LoginPage = () => {
       navigate("/");
     } catch (error) {
       console.error("Login failed:", error);
-      // Error is already set in the auth context
+      toast({
+        title: "Login gagal",
+        description: error instanceof Error ? error.message : "Email atau password salah",
+        variant: "destructive",
+      });
     }
   };
 
@@ -145,6 +149,13 @@ const LoginPage = () => {
               </Button>
             </form>
           </Form>
+
+          {/* Display error message if login fails */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-100 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           {/* Demo credentials */}
           <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-100 text-sm">
