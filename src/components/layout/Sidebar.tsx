@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -155,7 +156,11 @@ const Sidebar = () => {
 
   const handleSubscribe = () => {
     if (!selectedPlan || !selectedDuration || !selectedPaymentMethod) {
-      toast.error("Silakan pilih paket, durasi, dan metode pembayaran");
+      toast({
+        title: "Error",
+        description: "Silakan pilih paket, durasi, dan metode pembayaran",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -170,18 +175,29 @@ const Sidebar = () => {
   const submitSubscription = () => {
     const plan = subscriptionPlans.find(p => p.name === selectedPlan);
     if (!plan) {
-      toast.error("Paket tidak ditemukan");
+      toast({
+        title: "Error",
+        description: "Paket tidak ditemukan",
+        variant: "destructive",
+      });
       return;
     }
 
     const duration = plan.durations.find(d => d.months === selectedDuration);
     if (!duration) {
-      toast.error("Durasi tidak ditemukan");
+      toast({
+        title: "Error",
+        description: "Durasi tidak ditemukan",
+        variant: "destructive",
+      });
       return;
     }
 
     // In a real app, this would send the data to your backend
-    toast.success(`Permintaan berlangganan ${selectedPlan} untuk ${selectedDuration} bulan dengan ${selectedPaymentMethod} telah dikirim`);
+    toast({
+      title: "Success",
+      description: `Permintaan berlangganan ${selectedPlan} untuk ${selectedDuration} bulan dengan ${selectedPaymentMethod} telah dikirim`,
+    });
     setManageSubscriptionOpen(false);
     setUploadDialogOpen(false);
     setRenewConfirmOpen(false);
@@ -197,12 +213,19 @@ const Sidebar = () => {
 
   const handleUploadProof = () => {
     if (!transferProof) {
-      toast.error("Silakan unggah bukti transfer terlebih dahulu");
+      toast({
+        title: "Error",
+        description: "Silakan unggah bukti transfer terlebih dahulu",
+        variant: "destructive",
+      });
       return;
     }
 
     // In a real app, this would upload the file to your storage
-    toast.success("Bukti transfer berhasil diunggah");
+    toast({
+      title: "Success",
+      description: "Bukti transfer berhasil diunggah",
+    });
     setUploadDialogOpen(false);
     setRenewConfirmOpen(true);
   };

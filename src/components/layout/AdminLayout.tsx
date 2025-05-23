@@ -3,6 +3,7 @@ import React from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const AdminLayout = () => {
   const { user, loading } = useAuth();
@@ -24,12 +25,14 @@ const AdminLayout = () => {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      <AdminSidebar />
-      <div className="flex-1 overflow-auto">
-        <Outlet />
+    <SidebarProvider>
+      <div className="flex h-screen w-full overflow-hidden bg-background">
+        <AdminSidebar />
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
