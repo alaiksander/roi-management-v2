@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -22,8 +22,13 @@ import {
   Activity,
   DatabaseBackup,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const AdminSidebar = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  
   const navItems = [
     {
       name: "Dashboard",
@@ -67,6 +72,15 @@ const AdminSidebar = () => {
     },
   ];
 
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Berhasil keluar",
+      description: "Anda telah keluar dari sistem",
+    });
+    navigate("/login");
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -96,7 +110,7 @@ const AdminSidebar = () => {
       </SidebarContent>
       <SidebarFooter>
         <div className="p-2">
-          <Button variant="outline" className="w-full flex items-center gap-2">
+          <Button variant="outline" className="w-full flex items-center gap-2" onClick={handleLogout}>
             <LogOut size={18} />
             <span>Logout</span>
           </Button>

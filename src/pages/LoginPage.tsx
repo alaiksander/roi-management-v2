@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -161,7 +160,7 @@ const LoginPage = () => {
           <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-100 text-sm">
             <p className="font-medium text-blue-700 mb-1">Demo credentials:</p>
             <p className="text-blue-700">User: demo@example.com / password</p>
-            <p className="text-blue-700">Admin: admin@example.com / admin</p>
+            <p className="text-blue-700">Admin: admin@example.com / admin123</p>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">

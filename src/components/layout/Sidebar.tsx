@@ -1,6 +1,5 @@
-
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   Sidebar as ShadcnSidebar,
@@ -28,14 +27,18 @@ import {
   Upload,
   List,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/hooks/use-toast";
 import SidebarFeedbackWaitlist from "@/components/SidebarFeedbackWaitlist";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { toast } from "@/components/ui/sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  
   const [manageSubscriptionOpen, setManageSubscriptionOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
@@ -217,6 +220,15 @@ const Sidebar = () => {
     setManageSubscriptionOpen(true);
   };
 
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Berhasil keluar",
+      description: "Anda telah keluar dari sistem",
+    });
+    navigate("/login");
+  };
+
   return (
     <ShadcnSidebar>
       <SidebarHeader>
@@ -312,16 +324,18 @@ const Sidebar = () => {
       </SidebarContent>
       <SidebarFooter>
         <div className="p-2 flex gap-2">
-          <Button variant="outline" className="w-full flex items-center gap-2">
+          <Button variant="outline" className="w-full flex items-center gap-2" onClick={handleLogout}>
             <LogOut size={18} />
             <span>Logout</span>
           </Button>
-          <Link to="/admin" className="w-full">
-            <Button variant="outline" className="w-full flex items-center gap-2">
-              <Settings size={18} />
-              <span>Admin</span>
-            </Button>
-          </Link>
+          {user?.role === "admin" && (
+            <Link to="/admin" className="w-full">
+              <Button variant="outline" className="w-full flex items-center gap-2">
+                <Settings size={18} />
+                <span>Admin</span>
+              </Button>
+            </Link>
+          )}
         </div>
       </SidebarFooter>
 

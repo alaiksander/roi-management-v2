@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      if (email === "admin@example.com" && password === "admin") {
+      if (email === "admin@example.com" && password === "admin123") {
         const user: User = {
           id: "2",
           name: "Admin User",
