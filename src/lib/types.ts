@@ -33,6 +33,13 @@ export type Transaction = {
   description: string;
 };
 
+export type TransactionCategory = {
+  id: string;
+  name: string;
+  type: 'income' | 'expense' | 'both';
+  color?: string;
+};
+
 export type Report = {
   id: string;
   name: string;

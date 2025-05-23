@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import { ArrowUp, ArrowDown, CalendarDays } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 const CalendarPage = () => {
+  const { language, setLanguage } = useLanguage();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [view, setView] = useState<"transactions" | "campaigns">("transactions");
 
@@ -49,6 +51,11 @@ const CalendarPage = () => {
   });
 
   // Calculate total income and expenses for selected date
+// NOTE: Add translation keys to LanguageContext if missing:
+// - calendarDescription
+// - view
+// - activeCampaigns
+
   const totalIncome = transactionsOnDate
     .filter(tx => tx.type === "income")
     .reduce((sum, tx) => sum + tx.amount, 0);
@@ -67,19 +74,19 @@ const CalendarPage = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.calendar}</h1>
           <p className="text-muted-foreground">
-            View transactions and campaigns by date
+            {UI_TEXT.calendarDescription || "Lihat transaksi dan kampanye berdasarkan tanggal"}
           </p>
         </div>
         <Select value={view} onValueChange={(value: "transactions" | "campaigns") => setView(value)}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="View" />
+            <SelectValue placeholder={UI_TEXT.view || "Tampilan"} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="transactions">Transactions</SelectItem>
-              <SelectItem value="campaigns">Active Campaigns</SelectItem>
+              <SelectItem value="transactions">{UI_TEXT.transactions}</SelectItem>
+              <SelectItem value="campaigns">{UI_TEXT.activeCampaigns || "Kampanye Aktif"}</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -90,7 +97,7 @@ const CalendarPage = () => {
           <CardHeader>
             <CardTitle className="text-lg flex items-center">
               <CalendarDays className="mr-2 h-5 w-5" /> 
-              Calendar
+              {UI_TEXT.calendar}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -127,13 +134,13 @@ const CalendarPage = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-green-50 p-3 rounded-md">
-                    <div className="text-muted-foreground text-sm">Income</div>
+                    <div className="text-muted-foreground text-sm">Pemasukan</div>
                     <div className="text-green-600 text-lg font-semibold">
                       {formatCurrency(totalIncome)}
                     </div>
                   </div>
                   <div className="bg-red-50 p-3 rounded-md">
-                    <div className="text-muted-foreground text-sm">Expenses</div>
+                    <div className="text-muted-foreground text-sm">Pengeluaran</div>
                     <div className="text-red-600 text-lg font-semibold">
                       {formatCurrency(totalExpenses)}
                     </div>
@@ -141,7 +148,7 @@ const CalendarPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="font-semibold">Transactions</h3>
+                  <h3 className="font-semibold">Transaksi</h3>
                   {transactionsOnDate.length > 0 ? (
                     <div className="space-y-2">
                       {transactionsOnDate.map((transaction) => (
@@ -187,7 +194,7 @@ const CalendarPage = () => {
                     </div>
                   ) : (
                     <div className="text-muted-foreground text-center py-4">
-                      No transactions on this date
+                      Tidak ada transaksi pada tanggal ini
                     </div>
                   )}
                 </div>
@@ -196,7 +203,7 @@ const CalendarPage = () => {
 
             {date && view === "campaigns" && (
               <div className="space-y-4">
-                <h3 className="font-semibold">Active Campaigns</h3>
+                <h3 className="font-semibold">Kampanye Aktif</h3>
                 {campaignsOnDate.length > 0 ? (
                   <div className="space-y-3">
                     {campaignsOnDate.map((campaign) => (
@@ -227,7 +234,7 @@ const CalendarPage = () => {
                             {formatCurrency(campaign.budget)}
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Spent:</span>{" "}
+                            <span className="text-muted-foreground">Pengeluaran:</span>{" "}
                             {formatCurrency(campaign.spent)}
                           </div>
                         </div>
@@ -236,7 +243,7 @@ const CalendarPage = () => {
                   </div>
                 ) : (
                   <div className="text-muted-foreground text-center py-4">
-                    No active campaigns on this date
+                    Tidak ada kampanye aktif pada tanggal ini
                   </div>
                 )}
               </div>
