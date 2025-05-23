@@ -64,33 +64,33 @@ const Dashboard = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <div className="text-sm text-muted-foreground">Terakhir diperbarui: {new Date().toLocaleDateString('id-ID')}</div>
+        <div className="text-sm text-muted-foreground">Last updated: {new Date().toLocaleDateString('id-ID')}</div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Total Pendapatan"
+          title="Total Revenue"
           value={formatCurrency(totalRevenue)}
-          description="Dari keseluruhan kampanye"
+          description="From all campaigns"
           icon={<BarChart3 className="h-4 w-4" />}
           trend={{ value: 12.5, isPositive: true }}
         />
         <MetricCard
-          title="Total Klien"
+          title="Total Clients"
           value={mockClients.length}
-          description="Klien aktif"
+          description="Active clients"
           icon={<Users className="h-4 w-4" />}
         />
         <MetricCard
-          title="Kampanye Aktif"
+          title="Active Campaigns"
           value={mockCampaigns.filter((c) => c.status === "active").length}
-          description="Dari total kampanye"
+          description="Of total campaigns"
           icon={<Briefcase className="h-4 w-4" />}
         />
         <MetricCard
-          title="Rerata ROI"
+          title="Average ROI"
           value={`${avgROI.toFixed(2)}%`}
-          description="Seluruh kampanye"
+          description="Across all campaigns"
           icon={<ArrowUp className="h-4 w-4" />}
           trend={{ value: 8.2, isPositive: true }}
         />
@@ -99,7 +99,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-full lg:col-span-4 card-hover">
           <CardHeader>
-            <CardTitle>Performa Kampanye</CardTitle>
+            <CardTitle>Campaign Performance</CardTitle>
           </CardHeader>
           <CardContent className="pl-0">
             <ResponsiveContainer width="100%" height={350}>
@@ -149,7 +149,7 @@ const Dashboard = () => {
 
         <Card className="col-span-full lg:col-span-3 card-hover">
           <CardHeader>
-            <CardTitle>Distribusi ROI Kampanye</CardTitle>
+            <CardTitle>Campaign ROI Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -182,7 +182,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="card-hover">
           <CardHeader>
-            <CardTitle>Transaksi Terkini</CardTitle>
+            <CardTitle>Recent Transactions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -225,7 +225,7 @@ const Dashboard = () => {
 
         <Card className="card-hover">
           <CardHeader>
-            <CardTitle>Peringkat Klien</CardTitle>
+            <CardTitle>Top Clients By Revenue</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

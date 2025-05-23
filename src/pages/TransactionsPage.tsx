@@ -21,32 +21,20 @@ import {
 } from "@/components/ui/table";
 import { mockTransactions, mockClients, mockCampaigns } from "@/lib/mock-data";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Search, ArrowUp, ArrowDown, Plus, Filter, Edit, Trash2 } from "lucide-react";
-import { Transaction } from "@/lib/types";
-import { TransactionDialog } from "@/components/transactions/TransactionDialog";
-import { TransactionDeleteDialog } from "@/components/transactions/TransactionDeleteDialog";
-import { useToast } from "@/hooks/use-toast";
+import { Search, ArrowUp, ArrowDown, Plus, Filter } from "lucide-react";
 
 const TransactionsPage = () => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
   const [campaignFilter, setCampaignFilter] = useState("all");
-  
-  // Transaction management state
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentTransaction, setCurrentTransaction] = useState<Transaction | null>(null);
-  const { toast } = useToast();
 
   // Total income and expenses calculations
-  const totalIncome = transactions
+  const totalIncome = mockTransactions
     .filter((tx) => tx.type === "income")
     .reduce((sum, tx) => sum + tx.amount, 0);
 
-  const totalExpenses = transactions
+  const totalExpenses = mockTransactions
     .filter((tx) => tx.type === "expense")
     .reduce((sum, tx) => sum + tx.amount, 0);
   
@@ -62,7 +50,7 @@ const TransactionsPage = () => {
   };
 
   // Filter transactions
-  const filteredTransactions = transactions.filter((transaction) => {
+  const filteredTransactions = mockTransactions.filter((transaction) => {
     // Search filter
     const matchesSearch =
       transaction.description.toLowerCase().includes(search.toLowerCase()) ||
@@ -82,78 +70,24 @@ const TransactionsPage = () => {
     return matchesSearch && matchesType && matchesClient && matchesCampaign;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Transaction CRUD operations
-  const handleAddTransaction = (transactionData: Partial<Transaction>) => {
-    const newTransaction: Transaction = {
-      id: `tx-${Date.now()}`,
-      ...transactionData,
-    } as Transaction;
-
-    setTransactions([...transactions, newTransaction]);
-    toast({
-      title: "Transaksi ditambahkan",
-      description: "Transaksi baru berhasil ditambahkan",
-    });
-    setIsAddDialogOpen(false);
-  };
-
-  const handleEditTransaction = (transactionData: Partial<Transaction>) => {
-    setTransactions(
-      transactions.map((t) => 
-        t.id === transactionData.id ? { ...t, ...transactionData } : t
-      )
-    );
-    toast({
-      title: "Transaksi diperbarui",
-      description: "Transaksi berhasil diperbarui",
-    });
-    setIsEditDialogOpen(false);
-  };
-
-  const handleDeleteTransaction = () => {
-    if (currentTransaction) {
-      setTransactions(transactions.filter((t) => t.id !== currentTransaction.id));
-      toast({
-        title: "Transaksi dihapus",
-        description: "Transaksi berhasil dihapus",
-        variant: "destructive",
-      });
-      setIsDeleteDialogOpen(false);
-    }
-  };
-
-  const openAddDialog = () => {
-    setIsAddDialogOpen(true);
-  };
-
-  const openEditDialog = (transaction: Transaction) => {
-    setCurrentTransaction(transaction);
-    setIsEditDialogOpen(true);
-  };
-
-  const openDeleteDialog = (transaction: Transaction) => {
-    setCurrentTransaction(transaction);
-    setIsDeleteDialogOpen(true);
-  };
-
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Transaksi</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
           <p className="text-muted-foreground">
-            Manajemen dan pengelolaan semua transaksi keuangan
+            Manage and view all financial transactions
           </p>
         </div>
-        <Button onClick={() => openAddDialog()}>
-          <Plus className="mr-2 h-4 w-4" /> Tambah Transaksi
+        <Button>
+          <Plus className="mr-2 h-4 w-4" /> Add Transaction
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="card-hover">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Pemasukan</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
@@ -164,10 +98,9 @@ const TransactionsPage = () => {
             </div>
           </CardContent>
         </Card>
-        
         <Card className="card-hover">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Pengeluaran</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
@@ -178,10 +111,9 @@ const TransactionsPage = () => {
             </div>
           </CardContent>
         </Card>
-        
         <Card className="card-hover">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Pendapatan</CardTitle>
+            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalIncome - totalExpenses)}</div>
@@ -194,7 +126,7 @@ const TransactionsPage = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Cari transaksi, klien, atau kampanye..."
+            placeholder="Search transactions..."
             className="pl-8"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -202,23 +134,23 @@ const TransactionsPage = () => {
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-full md:w-[150px]">
-            <SelectValue placeholder="Tipe" />
+            <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">Semua Tipe</SelectItem>
-              <SelectItem value="income">Pemasukan</SelectItem>
-              <SelectItem value="expense">Pengeluaran</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="income">Income</SelectItem>
+              <SelectItem value="expense">Expense</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
         <Select value={clientFilter} onValueChange={setClientFilter}>
           <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Klien" />
+            <SelectValue placeholder="Client" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">Semua Klien</SelectItem>
+              <SelectItem value="all">All Clients</SelectItem>
               {mockClients.map((client) => (
                 <SelectItem key={client.id} value={client.id}>
                   {client.name}
@@ -229,11 +161,11 @@ const TransactionsPage = () => {
         </Select>
         <Select value={campaignFilter} onValueChange={setCampaignFilter}>
           <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Kampanye" />
+            <SelectValue placeholder="Campaign" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">Semua Kampanye</SelectItem>
+              <SelectItem value="all">All Campaigns</SelectItem>
               {mockCampaigns.map((campaign) => (
                 <SelectItem key={campaign.id} value={campaign.id}>
                   {campaign.name}
@@ -248,14 +180,13 @@ const TransactionsPage = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Tipe</TableHead>
-              <TableHead>Jumlah</TableHead>
-              <TableHead>Klien</TableHead>
-              <TableHead>Kampanye</TableHead>
-              <TableHead>Kategori</TableHead>
-              <TableHead>Deskripsi</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Campaign</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Description</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -277,7 +208,7 @@ const TransactionsPage = () => {
                         <ArrowDown className="h-3 w-3" />
                       )}
                     </div>
-                    <span className="capitalize">{transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</span>
+                    <span className="capitalize">{transaction.type}</span>
                   </div>
                 </TableCell>
                 <TableCell className={`font-medium ${
@@ -289,27 +220,6 @@ const TransactionsPage = () => {
                 <TableCell>{getCampaignName(transaction.campaignId)}</TableCell>
                 <TableCell>{transaction.category}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{transaction.description}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => openEditDialog(transaction)}
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => openDeleteDialog(transaction)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -321,9 +231,9 @@ const TransactionsPage = () => {
           <div className="bg-purple-100 p-3 rounded-full">
             <Filter className="h-6 w-6 text-purple-600" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold">Tidak ada transaksi ditemukan</h3>
+          <h3 className="mt-4 text-lg font-semibold">No transactions found</h3>
           <p className="text-muted-foreground text-center mt-2">
-            Tidak ada transaksi yang cocok dengan filter Anda.
+            There are no transactions matching your current filters.
           </p>
           <div className="mt-4 flex gap-3">
             <Button 
@@ -335,39 +245,14 @@ const TransactionsPage = () => {
                 setCampaignFilter("all");
               }}
             >
-              Bersihkan filter
+              Clear filters
             </Button>
-            <Button onClick={() => openAddDialog()}>
-              <Plus className="mr-2 h-4 w-4" /> Tambah transaksi
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Add transaction
             </Button>
           </div>
         </div>
       )}
-
-      {/* Transaction Dialog components */}
-      <TransactionDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        mode="add"
-        onSave={handleAddTransaction}
-      />
-
-      {currentTransaction && (
-        <TransactionDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          transaction={currentTransaction}
-          mode="edit"
-          onSave={handleEditTransaction}
-        />
-      )}
-
-      <TransactionDeleteDialog
-        transaction={currentTransaction}
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onDelete={handleDeleteTransaction}
-      />
     </div>
   );
 };

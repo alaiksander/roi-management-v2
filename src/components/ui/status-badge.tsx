@@ -28,21 +28,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         className
       )}
     >
-      {(() => {
-        switch (status.toLowerCase()) {
-          case "active":
-            return "Aktif";
-          case "completed":
-            return "Selesai";
-          case "paused":
-            return "Ditunda";
-          case "cancelled":
-            return "Dibatalkan";
-          default:
-            return status.charAt(0).toUpperCase() + status.slice(1);
-        }
-      })()}
-
+      {status}
     </div>
   );
 }
