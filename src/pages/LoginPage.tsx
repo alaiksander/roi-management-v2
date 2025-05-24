@@ -133,6 +133,15 @@ const LoginPage = () => {
                   </FormItem>
                 )}
               />
+              <div className="flex items-center justify-between">
+                <div></div>
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm text-primary hover:underline"
+                >
+                  Lupa password?
+                </Link>
+              </div>
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? (
                   <span className="flex items-center gap-2">
