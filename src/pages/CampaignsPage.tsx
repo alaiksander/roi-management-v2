@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -29,10 +29,13 @@ import { CampaignEditDialog } from "@/components/campaigns/CampaignEditDialog";
 import { CampaignDeleteDialog } from "@/components/campaigns/CampaignDeleteDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const CampaignsPage = () => {
   const { language, setLanguage } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
@@ -50,7 +53,7 @@ const CampaignsPage = () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('Campaign')
-        .select('*, Client!Campaign_clientId_fkey(name)')
+        .select('*, Client(name)')
         .eq('userId', user.id)
         .order('createdAt', { ascending: false });
       
@@ -74,6 +77,74 @@ const CampaignsPage = () => {
       return data || [];
     },
     enabled: !!user?.id,
+  });
+
+  // Add campaign mutation
+  const addCampaignMutation = useMutation({
+    mutationFn: async (newCampaign: any) => {
+      const { data, error } = await supabase
+        .from('Campaign')
+        .insert([{
+          ...newCampaign,
+          userId: user?.id,
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      toast({
+        title: "Campaign added",
+        description: "New campaign has been created successfully",
+      });
+    },
+  });
+
+  // Update campaign mutation
+  const updateCampaignMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { data, error } = await supabase
+        .from('Campaign')
+        .update(updates)
+        .eq('id', id)
+        .eq('userId', user?.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      toast({
+        title: "Campaign updated",
+        description: "Campaign has been updated successfully",
+      });
+    },
+  });
+
+  // Delete campaign mutation
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('Campaign')
+        .delete()
+        .eq('id', id)
+        .eq('userId', user?.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      toast({
+        title: "Campaign deleted",
+        description: "Campaign has been deleted successfully",
+        variant: "destructive",
+      });
+    },
   });
 
   // Calculate campaign metrics
@@ -104,6 +175,19 @@ const CampaignsPage = () => {
       
     return matchesSearch && matchesStatus;
   });
+
+  // Campaign handlers
+  const handleAddCampaign = (campaign: any) => {
+    addCampaignMutation.mutate(campaign);
+  };
+
+  const handleUpdateCampaign = (id: string, updates: any) => {
+    updateCampaignMutation.mutate({ id, updates });
+  };
+
+  const handleDeleteCampaign = (id: string) => {
+    deleteCampaignMutation.mutate(id);
+  };
 
   // Open campaign details dialog
   const openDetailsDialog = (campaign: any) => {
@@ -284,18 +368,21 @@ const CampaignsPage = () => {
       <CampaignAddDialog 
         open={isAddOpen}
         onOpenChange={setIsAddOpen}
+        onAddCampaign={handleAddCampaign}
       />
       
       <CampaignEditDialog 
         campaign={selectedCampaign}
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
+        onUpdateCampaign={handleUpdateCampaign}
       />
       
       <CampaignDeleteDialog 
         campaign={selectedCampaign}
         open={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
+        onDeleteCampaign={handleDeleteCampaign}
       />
     </div>
   );

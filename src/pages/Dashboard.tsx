@@ -68,14 +68,17 @@ const Dashboard = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch transactions data
+  // Fetch transactions data with proper Client relationship
   const { data: transactions = [] } = useQuery({
     queryKey: ['transactions', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('Transaction')
-        .select('*, Client(*)')
+        .select(`
+          *,
+          Client!Transaction_clientId_fkey(name)
+        `)
         .eq('userId', user.id)
         .order('date', { ascending: false });
       
@@ -251,7 +254,7 @@ const Dashboard = () => {
                       {transaction.type === "income" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{transaction.Client?.name}</p>
+                      <p className="text-sm font-medium">{transaction.Client?.name || 'Unknown Client'}</p>
                       <p className="text-xs text-muted-foreground">{transaction.category}</p>
                     </div>
                   </div>
