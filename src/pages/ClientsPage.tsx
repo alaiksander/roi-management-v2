@@ -1,20 +1,23 @@
-// React component
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { mockClients, mockCampaigns } from "@/lib/mock-data";
 import { formatCurrency } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Users, Search, Plus } from "lucide-react";
 import { ClientAddDialog } from "@/components/clients/ClientAddDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
-const PAGE_SIZE = 12; // Number of clients to load per scroll
+const PAGE_SIZE = 12;
 
 const ClientsPage = () => {
   const { language, setLanguage } = useLanguage();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -25,7 +28,7 @@ const ClientsPage = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => clearTimeout(handler);
   }, [search]);
@@ -35,15 +38,48 @@ const ClientsPage = () => {
     setVisibleCount(PAGE_SIZE);
   }, [debouncedSearch]);
 
+  // Fetch clients from Supabase
+  const { data: clients = [], isLoading } = useQuery({
+    queryKey: ['clients', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Client')
+        .select('*')
+        .eq('userId', user.id)
+        .order('createdAt', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch campaigns to calculate active campaigns per client
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['campaigns', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Campaign')
+        .select('*')
+        .eq('userId', user.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Memoized filtered clients using debounced search
   const filteredClients = useMemo(
     () =>
-      mockClients.filter(
+      clients.filter(
         (client) =>
           client.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-          client.company.toLowerCase().includes(debouncedSearch.toLowerCase())
+          client.email.toLowerCase().includes(debouncedSearch.toLowerCase())
       ),
-    [debouncedSearch]
+    [clients, debouncedSearch]
   );
 
   // Infinite scroll observer
@@ -68,20 +104,39 @@ const ClientsPage = () => {
   }, [handleObserver]);
 
   const getActiveCampaignsCount = (clientId: string) => {
-    return mockCampaigns.filter(
+    return campaigns.filter(
       (campaign) => campaign.clientId === clientId && campaign.status === "active"
     ).length;
   };
+
+  const getTotalCampaignsCount = (clientId: string) => {
+    return campaigns.filter(campaign => campaign.clientId === clientId).length;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.clients}</h1>
+            <p className="text-muted-foreground">Kelola klien dan kampanye mereka</p>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="h-48 animate-pulse bg-muted" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.clients}</h1>
-          <p className="text-muted-foreground">
-            {/* TODO: Add to UI_TEXT if needed */}
-            Kelola klien dan kampanye mereka
-          </p>
+          <p className="text-muted-foreground">Kelola klien dan kampanye mereka</p>
         </div>
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> Tambah Klien Baru
@@ -104,7 +159,7 @@ const ClientsPage = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredClients.slice(0, visibleCount).map((client) => {
           const activeCampaigns = getActiveCampaignsCount(client.id);
-          const totalCampaigns = client.campaigns?.length || 0; // Use optional chaining here
+          const totalCampaigns = getTotalCampaignsCount(client.id);
 
           return (
             <Link to={`/clients/${client.id}`} key={client.id}>
@@ -116,15 +171,15 @@ const ClientsPage = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold">{client.name}</h3>
-                      <p className="text-sm text-muted-foreground">{client.company}</p>
+                      <p className="text-sm text-muted-foreground">{client.email}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Total Pendapatan</p>
-                    <p className="font-medium">{formatCurrency(client.totalRevenue)}</p>
+                    <p className="text-muted-foreground">Total Spent</p>
+                    <p className="font-medium">{formatCurrency(client.totalSpent)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">{UI_TEXT.campaigns}</p>
@@ -142,13 +197,8 @@ const ClientsPage = () => {
 
                 <div className="mt-4 border-t pt-4 text-sm">
                   <div className="flex items-center justify-between">
-                    <p className="text-muted-foreground">Kontak</p>
-                    <p
-                      className="font-medium max-w-[140px] truncate"
-                      title={client.email}
-                    >
-                      {client.email}
-                    </p>
+                    <p className="text-muted-foreground">Status</p>
+                    <StatusBadge status={client.status} />
                   </div>
                 </div>
               </Card>
@@ -164,20 +214,23 @@ const ClientsPage = () => {
         </div>
       )}
 
-      {filteredClients.length === 0 && (
+      {filteredClients.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center py-10">
-          <p className="text-muted-foreground">{UI_TEXT.noClientsFound || "Tidak ada klien yang cocok dengan pencarian Anda."}</p>
+          <p className="text-muted-foreground">
+            {clients.length === 0 
+              ? "Belum ada klien. Tambahkan klien pertama Anda!" 
+              : "Tidak ada klien yang cocok dengan pencarian Anda."}
+          </p>
           <Button
             variant="outline"
             className="mt-2"
-            onClick={() => setSearch("")}
+            onClick={() => clients.length === 0 ? setIsAddDialogOpen(true) : setSearch("")}
           >
-            Clear search
+            {clients.length === 0 ? "Tambah Klien Pertama" : "Clear search"}
           </Button>
         </div>
       )}
 
-      {/* Add client dialog */}
       <ClientAddDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}

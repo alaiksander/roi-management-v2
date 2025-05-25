@@ -1,10 +1,10 @@
-// React component
+
 import React, { useState } from "react";
 import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { mockCampaigns, mockClients } from "@/lib/mock-data";
 import {
   Table,
   TableBody,
@@ -22,37 +22,82 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { calculateROI, formatCurrency, formatDate } from "@/lib/utils";
-import { Briefcase, Search, Plus, ArrowUp, Eye, Edit, Trash2 } from "lucide-react";
-import { Campaign } from "@/lib/types";
+import { Briefcase, Search, Plus, ArrowUp, Edit, Trash2 } from "lucide-react";
 import { CampaignDetailsDialog } from "@/components/campaigns/CampaignDetailsDialog";
 import { CampaignAddDialog } from "@/components/campaigns/CampaignAddDialog";
 import { CampaignEditDialog } from "@/components/campaigns/CampaignEditDialog";
 import { CampaignDeleteDialog } from "@/components/campaigns/CampaignDeleteDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const CampaignsPage = () => {
   const { language, setLanguage } = useLanguage();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
   
   // Dialog states
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  // Get clientName by clientId
-  const getClientName = (clientId: string) => {
-    const client = mockClients.find((c) => c.id === clientId);
-    return client ? client.name : "Unknown";
-  };
+  // Fetch campaigns from Supabase
+  const { data: campaigns = [], isLoading } = useQuery({
+    queryKey: ['campaigns', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Campaign')
+        .select('*, Client!Campaign_clientId_fkey(name)')
+        .eq('userId', user.id)
+        .order('createdAt', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch transactions to calculate revenue and spent
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['transactions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Transaction')
+        .select('*')
+        .eq('userId', user.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Calculate campaign metrics
+  const campaignsWithMetrics = campaigns.map(campaign => {
+    const campaignTransactions = transactions.filter(t => t.campaignId === campaign.id);
+    const revenue = campaignTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const spent = campaignTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    return {
+      ...campaign,
+      revenue,
+      spent,
+    };
+  });
 
   // Filter campaigns based on search and status
-  const filteredCampaigns = campaigns.filter((campaign) => {
+  const filteredCampaigns = campaignsWithMetrics.filter((campaign) => {
     const matchesSearch =
       campaign.name.toLowerCase().includes(search.toLowerCase()) ||
-      getClientName(campaign.clientId).toLowerCase().includes(search.toLowerCase());
+      (campaign.Client?.name || '').toLowerCase().includes(search.toLowerCase());
     
     const matchesStatus = 
       statusFilter === "all" || campaign.status === statusFilter;
@@ -60,55 +105,50 @@ const CampaignsPage = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Handle adding a campaign
-  const handleAddCampaign = (newCampaign: Campaign) => {
-    setCampaigns([...campaigns, newCampaign]);
-  };
-
-  // Handle updating a campaign
-  const handleUpdateCampaign = (id: string, updatedData: Partial<Campaign>) => {
-    setCampaigns(
-      campaigns.map((campaign) =>
-        campaign.id === id ? { ...campaign, ...updatedData } : campaign
-      )
-    );
-  };
-
-  // Handle deleting a campaign
-  const handleDeleteCampaign = (id: string) => {
-    setCampaigns(campaigns.filter((campaign) => campaign.id !== id));
-  };
-
   // Open campaign details dialog
-  const openDetailsDialog = (campaign: Campaign) => {
+  const openDetailsDialog = (campaign: any) => {
     setSelectedCampaign(campaign);
     setIsDetailsOpen(true);
   };
 
   // Open campaign edit dialog
-  const openEditDialog = (campaign: Campaign) => {
+  const openEditDialog = (campaign: any) => {
     setSelectedCampaign(campaign);
     setIsEditOpen(true);
   };
 
   // Open campaign delete dialog
-  const openDeleteDialog = (campaign: Campaign) => {
+  const openDeleteDialog = (campaign: any) => {
     setSelectedCampaign(campaign);
     setIsDeleteOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.campaigns}</h1>
+            <p className="text-muted-foreground">Kelola kampanye pemasaran Anda dan lacak kinerjanya</p>
+          </div>
+        </div>
+        <div className="animate-pulse">
+          <div className="h-10 bg-muted rounded mb-4"></div>
+          <div className="h-96 bg-muted rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.campaigns}</h1>
-          <p className="text-muted-foreground">
-            {/* TODO: Add to UI_TEXT if needed */}
-            "Kelola kampanye pemasaran Anda dan lacak kinerjanya"
-          </p>
+          <p className="text-muted-foreground">Kelola kampanye pemasaran Anda dan lacak kinerjanya</p>
         </div>
         <Button onClick={() => setIsAddOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Kampanye Baru"
+          <Plus className="mr-2 h-4 w-4" /> Kampanye Baru
         </Button>
       </div>
 
@@ -144,7 +184,6 @@ const CampaignsPage = () => {
             <TableRow>
               <TableHead>Kampanye</TableHead>
               <TableHead>Klien</TableHead>
-              <TableHead>Platform</TableHead>
               <TableHead>Tanggal Mulai</TableHead>
               <TableHead>Anggaran</TableHead>
               <TableHead>Pengeluaran</TableHead>
@@ -162,8 +201,7 @@ const CampaignsPage = () => {
                   <TableCell className="font-medium">
                     {campaign.name}
                   </TableCell>
-                  <TableCell>{getClientName(campaign.clientId)}</TableCell>
-                  <TableCell>{campaign.platform}</TableCell>
+                  <TableCell>{campaign.Client?.name || 'No Client'}</TableCell>
                   <TableCell>{formatDate(campaign.startDate)}</TableCell>
                   <TableCell>{formatCurrency(campaign.budget)}</TableCell>
                   <TableCell>{formatCurrency(campaign.spent)}</TableCell>
@@ -181,7 +219,6 @@ const CampaignsPage = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      
                       <Button 
                         variant="ghost" 
                         size="icon"
@@ -210,20 +247,26 @@ const CampaignsPage = () => {
           <div className="bg-purple-100 p-3 rounded-full">
             <Briefcase className="h-6 w-6 text-purple-600" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold">{UI_TEXT.noCampaignsFound || "Tidak ada kampanye"}</h3>
+          <h3 className="mt-4 text-lg font-semibold">
+            {campaigns.length === 0 ? "Belum ada kampanye" : "Tidak ada kampanye ditemukan"}
+          </h3>
           <p className="text-muted-foreground text-center mt-2">
-            {UI_TEXT.noCampaignsCriteria || "Tidak ada kampanye yang cocok dengan kriteria pencarian Anda."}
+            {campaigns.length === 0 
+              ? "Buat kampanye pertama Anda untuk memulai melacak kinerja pemasaran."
+              : "Tidak ada kampanye yang cocok dengan kriteria pencarian Anda."}
           </p>
           <div className="mt-4 flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("all");
-              }}
-            >
-              Bersihkan filter
-            </Button>
+            {campaigns.length > 0 && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+              >
+                Bersihkan filter
+              </Button>
+            )}
             <Button onClick={() => setIsAddOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Buat kampanye
             </Button>
@@ -241,21 +284,18 @@ const CampaignsPage = () => {
       <CampaignAddDialog 
         open={isAddOpen}
         onOpenChange={setIsAddOpen}
-        onAddCampaign={handleAddCampaign}
       />
       
       <CampaignEditDialog 
         campaign={selectedCampaign}
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
-        onUpdateCampaign={handleUpdateCampaign}
       />
       
       <CampaignDeleteDialog 
         campaign={selectedCampaign}
         open={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
-        onDeleteCampaign={handleDeleteCampaign}
       />
     </div>
   );

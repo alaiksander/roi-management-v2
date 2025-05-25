@@ -117,6 +117,20 @@ export type Database = {
             referencedRelation: "User"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_campaign_client"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_campaign_user"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
         ]
       }
       Client: {
@@ -162,6 +176,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "Client_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_user"
             columns: ["userId"]
             isOneToOne: false
             referencedRelation: "User"
@@ -245,6 +266,27 @@ export type Database = {
           userId?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_transaction_campaign"
+            columns: ["campaignId"]
+            isOneToOne: false
+            referencedRelation: "Campaign"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_transaction_client"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_transaction_user"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "Transaction_campaignId_fkey"
             columns: ["campaignId"]
