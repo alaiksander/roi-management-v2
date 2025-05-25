@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { loadFromStorage, saveToStorage } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export interface User {
   id: string;
@@ -30,55 +31,98 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is stored in localStorage
-    const savedUser = loadFromStorage<User | null>("jurnalkas_user", null);
-    setUser(savedUser);
-    setLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserProfile(session.user);
+      }
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await fetchUserProfile(session.user);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+    try {
+      // Try to get user profile from our User table
+      const { data: userProfile, error } = await supabase
+        .from('User')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user profile:', error);
+        return;
+      }
+
+      if (userProfile) {
+        setUser({
+          id: userProfile.id,
+          name: userProfile.name || supabaseUser.email?.split('@')[0] || '',
+          email: userProfile.email,
+          role: userProfile.role as "user" | "admin",
+          avatarUrl: userProfile.image || undefined,
+          createdAt: userProfile.createdAt,
+        });
+      } else {
+        // Create user profile if it doesn't exist
+        const newUser = {
+          id: supabaseUser.id,
+          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
+          email: supabaseUser.email!,
+          role: 'user' as const,
+          password: '', // This will be handled by Supabase Auth
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const { error: insertError } = await supabase
+          .from('User')
+          .insert([newUser]);
+
+        if (insertError) {
+          console.error('Error creating user profile:', insertError);
+        } else {
+          setUser({
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role,
+            createdAt: newUser.createdAt,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error in fetchUserProfile:', err);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      // For demo purposes we're using mock authentication
-      // In a real app, this would be an API call
-      if (email === "demo@example.com" && password === "password") {
-        const user: User = {
-          id: "1",
-          name: "Demo User",
-          email: "demo@example.com",
-          role: "user",
-          createdAt: new Date().toISOString(),
-        };
-        
-        setUser(user);
-        saveToStorage("jurnalkas_user", user);
-        return;
-      }
-      
-      if (email === "admin@example.com" && password === "admin123") {
-        const user: User = {
-          id: "2",
-          name: "Admin User",
-          email: "admin@example.com",
-          role: "admin",
-          createdAt: new Date().toISOString(),
-        };
-        
-        setUser(user);
-        saveToStorage("jurnalkas_user", user);
-        return;
-      }
-      
-      // If we reach here, the credentials are invalid
-      throw new Error("Email atau password salah");
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Terjadi kesalahan saat login");
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan saat login");
       throw err;
     } finally {
       setLoading(false);
@@ -90,33 +134,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
       
-      // For demo purposes, we'll simulate a successful registration
-      // In a real app, this would be an API call
-      const user: User = {
-        id: Math.random().toString(36).substring(2, 9),
-        name,
+      const { error } = await supabase.auth.signUp({
         email,
-        role: "user",
-        createdAt: new Date().toISOString(),
-      };
-      
-      setUser(user);
-      saveToStorage("jurnalkas_user", user);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Terjadi kesalahan saat registrasi");
-      }
+        password,
+        options: {
+          data: {
+            name: name,
+          }
+        }
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan saat registrasi");
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error logging out:', error);
+    }
     setUser(null);
-    localStorage.removeItem("jurnalkas_user");
   };
 
   const updateProfile = async (data: Partial<User>) => {
@@ -125,15 +167,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       if (!user) throw new Error("User not authenticated");
       
+      const { error } = await supabase
+        .from('User')
+        .update({
+          name: data.name,
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
-      saveToStorage("jurnalkas_user", updatedUser);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Terjadi kesalahan saat memperbarui profil");
-      }
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan saat memperbarui profil");
       throw err;
     } finally {
       setLoading(false);

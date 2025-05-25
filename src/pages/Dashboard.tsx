@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   BarChart3, 
   Users, 
@@ -23,36 +24,9 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { mockClients, mockCampaigns, mockTransactions } from "@/lib/mock-data";
+import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
-
-// Calculate summary data
-const totalRevenue = mockCampaigns.reduce((sum, campaign) => sum + campaign.revenue, 0);
-const totalSpent = mockCampaigns.reduce((sum, campaign) => sum + campaign.spent, 0);
-const totalROI = (totalRevenue - totalSpent) / totalSpent;
-const avgROI = totalROI * 100;
-
-// Prepare chart data
-const revenueByClient = mockClients.map((client) => ({
-  name: client.name,
-  revenue: client.totalRevenue,
-}));
-
-const campaignPerformance = mockCampaigns
-  .map((campaign) => ({
-    name: campaign.name,
-    revenue: campaign.revenue,
-    spent: campaign.spent,
-    roi: ((campaign.revenue - campaign.spent) / campaign.spent) * 100,
-  }))
-  .sort((a, b) => b.roi - a.roi)
-  .slice(0, 5);
-
-// Pie chart data
-const roiData = mockCampaigns.map((campaign) => ({
-  name: campaign.name,
-  value: campaign.revenue - campaign.spent,
-}));
+import { useAuth } from "@/context/AuthContext";
 
 const COLORS = [
   "#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe", "#ede9fe", 
@@ -60,6 +34,84 @@ const COLORS = [
 ];
 
 const Dashboard = () => {
+  const { user } = useAuth();
+
+  // Fetch clients data
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Client')
+        .select('*')
+        .eq('userId', user.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch campaigns data
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['campaigns', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Campaign')
+        .select('*')
+        .eq('userId', user.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch transactions data
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['transactions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Transaction')
+        .select('*, Client(*)')
+        .eq('userId', user.id)
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Calculate metrics from real data
+  const totalRevenue = transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const totalExpenses = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+
+  // Prepare chart data from real data
+  const revenueByClient = clients.map((client) => ({
+    name: client.name,
+    revenue: client.totalSpent,
+  }));
+
+  const campaignPerformance = campaigns
+    .slice(0, 5)
+    .map((campaign) => ({
+      name: campaign.name,
+      budget: campaign.budget,
+      spent: transactions
+        .filter(t => t.campaignId === campaign.id && t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0),
+    }));
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -71,28 +123,27 @@ const Dashboard = () => {
         <MetricCard
           title="Total Pendapatan"
           value={formatCurrency(totalRevenue)}
-          description="Dari keseluruhan kampanye"
+          description="Dari keseluruhan transaksi"
           icon={<BarChart3 className="h-4 w-4" />}
           trend={{ value: 12.5, isPositive: true }}
         />
         <MetricCard
           title="Total Klien"
-          value={mockClients.length}
-          description="Klien aktif"
+          value={clients.length}
+          description="Klien terdaftar"
           icon={<Users className="h-4 w-4" />}
         />
         <MetricCard
           title="Kampanye Aktif"
-          value={mockCampaigns.filter((c) => c.status === "active").length}
+          value={activeCampaigns}
           description="Dari total kampanye"
           icon={<Briefcase className="h-4 w-4" />}
         />
         <MetricCard
-          title="Rerata ROI"
-          value={`${avgROI.toFixed(2)}%`}
-          description="Seluruh kampanye"
-          icon={<ArrowUp className="h-4 w-4" />}
-          trend={{ value: 8.2, isPositive: true }}
+          title="Total Pengeluaran"
+          value={formatCurrency(totalExpenses)}
+          description="Seluruh pengeluaran"
+          icon={<ArrowDown className="h-4 w-4" />}
         />
       </div>
 
@@ -131,13 +182,13 @@ const Dashboard = () => {
                 />
                 <Legend />
                 <Bar
-                  name="Revenue"
-                  dataKey="revenue"
+                  name="Budget"
+                  dataKey="budget"
                   fill="#8b5cf6"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
-                  name="Ad Spend"
+                  name="Spent"
                   dataKey="spent"
                   fill="#c4b5fd"
                   radius={[4, 4, 0, 0]}
@@ -149,22 +200,22 @@ const Dashboard = () => {
 
         <Card className="col-span-full lg:col-span-3 card-hover">
           <CardHeader>
-            <CardTitle>Distribusi ROI Kampanye</CardTitle>
+            <CardTitle>Revenue by Client</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={roiData}
+                  data={revenueByClient}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
-                  dataKey="value"
+                  dataKey="revenue"
                 >
-                  {roiData.map((entry, index) => (
+                  {revenueByClient.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -186,51 +237,48 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {mockTransactions.slice(-5).reverse().map((transaction) => {
-                const client = mockClients.find((c) => c.id === transaction.clientId);
-                return (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-full ${
-                        transaction.type === "income" 
-                          ? "bg-green-100 text-green-600" 
-                          : "bg-red-100 text-red-600"
-                      }`}>
-                        {transaction.type === "income" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{client?.name}</p>
-                        <p className="text-xs text-muted-foreground">{transaction.category}</p>
-                      </div>
+              {transactions.slice(0, 5).map((transaction) => (
+                <div
+                  key={transaction.id}
+                  className="flex items-center justify-between py-2 border-b last:border-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-full ${
+                      transaction.type === "income" 
+                        ? "bg-green-100 text-green-600" 
+                        : "bg-red-100 text-red-600"
+                    }`}>
+                      {transaction.type === "income" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
                     </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-semibold ${
-                        transaction.type === "income" ? "text-green-600" : "text-red-600"
-                      }`}>
-                        {transaction.type === "income" ? "+" : "-"} {formatCurrency(transaction.amount)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(transaction.date).toLocaleDateString('id-ID')}
-                      </p>
+                    <div>
+                      <p className="text-sm font-medium">{transaction.Client?.name}</p>
+                      <p className="text-xs text-muted-foreground">{transaction.category}</p>
                     </div>
                   </div>
-                );
-              })}
+                  <div className="text-right">
+                    <p className={`text-sm font-semibold ${
+                      transaction.type === "income" ? "text-green-600" : "text-red-600"
+                    }`}>
+                      {transaction.type === "income" ? "+" : "-"} {formatCurrency(transaction.amount)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(transaction.date).toLocaleDateString('id-ID')}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
         <Card className="card-hover">
           <CardHeader>
-            <CardTitle>Peringkat Klien</CardTitle>
+            <CardTitle>Top Klien</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockClients
-                .sort((a, b) => b.totalRevenue - a.totalRevenue)
+              {clients
+                .sort((a, b) => b.totalSpent - a.totalSpent)
                 .slice(0, 5)
                 .map((client, index) => (
                   <div key={client.id} className="flex items-center gap-4">
@@ -239,10 +287,10 @@ const Dashboard = () => {
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{client.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{client.company}</p>
+                      <p className="text-xs text-muted-foreground truncate">{client.email}</p>
                     </div>
                     <p className="text-sm font-medium tabular-nums">
-                      {formatCurrency(client.totalRevenue)}
+                      {formatCurrency(client.totalSpent)}
                     </p>
                   </div>
                 ))}
