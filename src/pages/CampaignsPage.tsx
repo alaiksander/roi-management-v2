@@ -53,7 +53,7 @@ const CampaignsPage = () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('Campaign')
-        .select('*, Client(name)')
+        .select('*, Client!Campaign_clientId_fkey(name)')
         .eq('userId', user.id)
         .order('createdAt', { ascending: false });
       
