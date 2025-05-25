@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -34,15 +35,17 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
-  const { login, user, error } = useAuth();
+  const { login, user, error, loading } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
-    if (user) {
+    if (user && !loading) {
+      console.log('User logged in, redirecting to dashboard');
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -53,13 +56,18 @@ const LoginPage = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (isSubmitting) return;
+    
     try {
+      setIsSubmitting(true);
+      console.log('Starting login process for:', data.email);
+      
       await login(data.email, data.password);
+      
       toast({
         title: "Login berhasil",
         description: "Selamat datang kembali!",
       });
-      navigate("/");
     } catch (error) {
       console.error("Login failed:", error);
       toast({
@@ -67,8 +75,19 @@ const LoginPage = () => {
         description: error instanceof Error ? error.message : "Email atau password salah",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -142,8 +161,12 @@ const LoginPage = () => {
                   Lupa password?
                 </Link>
               </div>
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? (
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
                     Memproses...
