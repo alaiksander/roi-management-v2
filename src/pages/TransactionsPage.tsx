@@ -1,372 +1,356 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { mockTransactions, mockClients, mockCampaigns } from "@/lib/mock-data";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { Search, ArrowUp, ArrowDown, Plus, Filter, Edit, Trash2 } from "lucide-react";
-import { Transaction } from "@/lib/types";
+import { TransactionsList } from "@/components/transactions/TransactionsList";
 import { TransactionDialog } from "@/components/transactions/TransactionDialog";
 import { TransactionDeleteDialog } from "@/components/transactions/TransactionDeleteDialog";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { Search, Plus, Filter, Download } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 const TransactionsPage = () => {
+  const { language } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [clientFilter, setClientFilter] = useState("all");
-  const [campaignFilter, setCampaignFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   
-  // Transaction management state
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  // Dialog states
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentTransaction, setCurrentTransaction] = useState<Transaction | null>(null);
-  const { toast } = useToast();
 
-  // Total income and expenses calculations
-  const totalIncome = transactions
-    .filter((tx) => tx.type === "income")
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  // Fetch transactions from Supabase
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ['transactions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Transaction')
+        .select('*, Client!Transaction_clientId_fkey(name), Campaign(name)')
+        .eq('userId', user.id)
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
 
-  const totalExpenses = transactions
-    .filter((tx) => tx.type === "expense")
-    .reduce((sum, tx) => sum + tx.amount, 0);
-  
-  // Get client and campaign names
-  const getClientName = (clientId: string) => {
-    const client = mockClients.find((c) => c.id === clientId);
-    return client ? client.name : "Unknown";
-  };
+  // Fetch clients for transaction form
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Client')
+        .select('*')
+        .eq('userId', user.id)
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
 
-  const getCampaignName = (campaignId: string) => {
-    const campaign = mockCampaigns.find((c) => c.id === campaignId);
-    return campaign ? campaign.name : "Unknown";
-  };
+  // Fetch campaigns for transaction form
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['campaigns', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('Campaign')
+        .select('*')
+        .eq('userId', user.id)
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch categories for filtering and forms
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('TransactionCategory')
+        .select('*')
+        .eq('userId', user.id)
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Add transaction mutation
+  const addTransactionMutation = useMutation({
+    mutationFn: async (newTransaction: any) => {
+      const { data, error } = await supabase
+        .from('Transaction')
+        .insert([{
+          ...newTransaction,
+          userId: user?.id,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast({
+        title: "Transaction added",
+        description: "New transaction has been created successfully",
+      });
+    },
+  });
+
+  // Update transaction mutation
+  const updateTransactionMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { data, error } = await supabase
+        .from('Transaction')
+        .update({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('userId', user?.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast({
+        title: "Transaction updated",
+        description: "Transaction has been updated successfully",
+      });
+    },
+  });
+
+  // Delete transaction mutation
+  const deleteTransactionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('Transaction')
+        .delete()
+        .eq('id', id)
+        .eq('userId', user?.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast({
+        title: "Transaction deleted",
+        description: "Transaction has been deleted successfully",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Filter transactions
   const filteredTransactions = transactions.filter((transaction) => {
-    // Search filter
-    const matchesSearch =
+    const matchesSearch = 
       transaction.description.toLowerCase().includes(search.toLowerCase()) ||
       transaction.category.toLowerCase().includes(search.toLowerCase()) ||
-      getClientName(transaction.clientId).toLowerCase().includes(search.toLowerCase()) ||
-      getCampaignName(transaction.campaignId).toLowerCase().includes(search.toLowerCase());
+      (transaction.Client?.name || '').toLowerCase().includes(search.toLowerCase());
     
-    // Type filter
     const matchesType = typeFilter === "all" || transaction.type === typeFilter;
+    const matchesStatus = statusFilter === "all" || transaction.status === statusFilter;
+    const matchesCategory = categoryFilter === "all" || transaction.category === categoryFilter;
     
-    // Client filter
-    const matchesClient = clientFilter === "all" || transaction.clientId === clientFilter;
-    
-    // Campaign filter
-    const matchesCampaign = campaignFilter === "all" || transaction.campaignId === campaignFilter;
-    
-    return matchesSearch && matchesType && matchesClient && matchesCampaign;
-  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return matchesSearch && matchesType && matchesStatus && matchesCategory;
+  });
 
-  // Transaction CRUD operations
-  const handleAddTransaction = (transactionData: Partial<Transaction>) => {
-    const newTransaction: Transaction = {
-      id: `tx-${Date.now()}`,
-      ...transactionData,
-    } as Transaction;
-
-    setTransactions([...transactions, newTransaction]);
-    toast({
-      title: "Transaksi ditambahkan",
-      description: "Transaksi baru berhasil ditambahkan",
-    });
-    setIsAddDialogOpen(false);
+  // Transaction handlers
+  const handleAddTransaction = (transaction: any) => {
+    addTransactionMutation.mutate(transaction);
   };
 
-  const handleEditTransaction = (transactionData: Partial<Transaction>) => {
-    setTransactions(
-      transactions.map((t) => 
-        t.id === transactionData.id ? { ...t, ...transactionData } : t
-      )
+  const handleUpdateTransaction = (id: string, updates: any) => {
+    updateTransactionMutation.mutate({ id, updates });
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    deleteTransactionMutation.mutate(id);
+  };
+
+  // Calculate summary statistics
+  const totalIncome = filteredTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const totalExpense = filteredTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const netProfit = totalIncome - totalExpense;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.transactions}</h1>
+            <p className="text-muted-foreground">Kelola semua transaksi keuangan Anda</p>
+          </div>
+        </div>
+        <div className="animate-pulse">
+          <div className="h-10 bg-muted rounded mb-4"></div>
+          <div className="h-96 bg-muted rounded"></div>
+        </div>
+      </div>
     );
-    toast({
-      title: "Transaksi diperbarui",
-      description: "Transaksi berhasil diperbarui",
-    });
-    setIsEditDialogOpen(false);
-  };
-
-  const handleDeleteTransaction = () => {
-    if (currentTransaction) {
-      setTransactions(transactions.filter((t) => t.id !== currentTransaction.id));
-      toast({
-        title: "Transaksi dihapus",
-        description: "Transaksi berhasil dihapus",
-        variant: "destructive",
-      });
-      setIsDeleteDialogOpen(false);
-    }
-  };
-
-  const openAddDialog = () => {
-    setIsAddDialogOpen(true);
-  };
-
-  const openEditDialog = (transaction: Transaction) => {
-    setCurrentTransaction(transaction);
-    setIsEditDialogOpen(true);
-  };
-
-  const openDeleteDialog = (transaction: Transaction) => {
-    setCurrentTransaction(transaction);
-    setIsDeleteDialogOpen(true);
-  };
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Transaksi</h1>
-          <p className="text-muted-foreground">
-            Manajemen dan pengelolaan semua transaksi keuangan
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{UI_TEXT.transactions}</h1>
+          <p className="text-muted-foreground">Kelola semua transaksi keuangan Anda</p>
         </div>
-        <Button onClick={() => openAddDialog()}>
-          <Plus className="mr-2 h-4 w-4" /> Tambah Transaksi
+        <Button onClick={() => {
+          setSelectedTransaction(null);
+          setIsTransactionDialogOpen(true);
+        }}>
+          <Plus className="mr-2 h-4 w-4" /> Transaksi Baru
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="card-hover">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Pemasukan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <div className="mr-2 rounded-full bg-green-100 p-2 text-green-600">
-                <ArrowUp className="h-4 w-4" />
-              </div>
-              <div className="text-2xl font-bold">{formatCurrency(totalIncome)}</div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="card-hover">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Pengeluaran</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <div className="mr-2 rounded-full bg-red-100 p-2 text-red-600">
-                <ArrowDown className="h-4 w-4" />
-              </div>
-              <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="card-hover">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Pendapatan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalIncome - totalExpenses)}</div>
-          </CardContent>
-        </Card>
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Total Pemasukan</div>
+          </div>
+          <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+        </div>
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Total Pengeluaran</div>
+          </div>
+          <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense)}</div>
+        </div>
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Keuntungan Bersih</div>
+          </div>
+          <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {formatCurrency(netProfit)}
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2 md:flex-row">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Cari transaksi, klien, atau kampanye..."
-            className="pl-8"
+            placeholder="Cari transaksi..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
           />
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full md:w-[150px]">
-            <SelectValue placeholder="Tipe" />
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Jenis" />
           </SelectTrigger>
           <SelectContent>
-            <SelectGroup>
-              <SelectItem value="all">Semua Tipe</SelectItem>
-              <SelectItem value="income">Pemasukan</SelectItem>
-              <SelectItem value="expense">Pengeluaran</SelectItem>
-            </SelectGroup>
+            <SelectItem value="all">Semua Jenis</SelectItem>
+            <SelectItem value="income">Pemasukan</SelectItem>
+            <SelectItem value="expense">Pengeluaran</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={clientFilter} onValueChange={setClientFilter}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Klien" />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectGroup>
-              <SelectItem value="all">Semua Klien</SelectItem>
-              {mockClients.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
+            <SelectItem value="all">Semua Status</SelectItem>
+            <SelectItem value="pending">Tertunda</SelectItem>
+            <SelectItem value="completed">Selesai</SelectItem>
+            <SelectItem value="cancelled">Dibatalkan</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={campaignFilter} onValueChange={setCampaignFilter}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Kampanye" />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Kategori" />
           </SelectTrigger>
           <SelectContent>
-            <SelectGroup>
-              <SelectItem value="all">Semua Kampanye</SelectItem>
-              {mockCampaigns.map((campaign) => (
-                <SelectItem key={campaign.id} value={campaign.id}>
-                  {campaign.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Tipe</TableHead>
-              <TableHead>Jumlah</TableHead>
-              <TableHead>Klien</TableHead>
-              <TableHead>Kampanye</TableHead>
-              <TableHead>Kategori</TableHead>
-              <TableHead>Deskripsi</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTransactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell>{formatDate(transaction.date)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    <div
-                      className={`mr-2 rounded-full p-1 ${
-                        transaction.type === "income"
-                          ? "bg-green-100 text-green-600"
-                          : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {transaction.type === "income" ? (
-                        <ArrowUp className="h-3 w-3" />
-                      ) : (
-                        <ArrowDown className="h-3 w-3" />
-                      )}
-                    </div>
-                    <span className="capitalize">{transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</span>
-                  </div>
-                </TableCell>
-                <TableCell className={`font-medium ${
-                  transaction.type === "income" ? "text-green-600" : "text-red-600"
-                }`}>
-                  {transaction.type === "income" ? "+" : "-"} {formatCurrency(transaction.amount)}
-                </TableCell>
-                <TableCell>{getClientName(transaction.clientId)}</TableCell>
-                <TableCell>{getCampaignName(transaction.campaignId)}</TableCell>
-                <TableCell>{transaction.category}</TableCell>
-                <TableCell className="max-w-[200px] truncate">{transaction.description}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => openEditDialog(transaction)}
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => openDeleteDialog(transaction)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+            <SelectItem value="all">Semua Kategori</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.name}>
+                {category.name}
+              </SelectItem>
             ))}
-          </TableBody>
-        </Table>
+          </SelectContent>
+        </Select>
       </div>
 
-      {filteredTransactions.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-10">
-          <div className="bg-purple-100 p-3 rounded-full">
-            <Filter className="h-6 w-6 text-purple-600" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">Tidak ada transaksi ditemukan</h3>
-          <p className="text-muted-foreground text-center mt-2">
-            Tidak ada transaksi yang cocok dengan filter Anda.
-          </p>
-          <div className="mt-4 flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearch("");
-                setTypeFilter("all");
-                setClientFilter("all");
-                setCampaignFilter("all");
-              }}
-            >
-              Bersihkan filter
-            </Button>
-            <Button onClick={() => openAddDialog()}>
-              <Plus className="mr-2 h-4 w-4" /> Tambah transaksi
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Transaction Dialog components */}
-      <TransactionDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        mode="add"
-        onSave={handleAddTransaction}
+      {/* Transactions List */}
+      <TransactionsList 
+        transactions={filteredTransactions}
+        onEdit={(transaction) => {
+          setSelectedTransaction(transaction);
+          setIsTransactionDialogOpen(true);
+        }}
+        onDelete={(transaction) => {
+          setSelectedTransaction(transaction);
+          setIsDeleteDialogOpen(true);
+        }}
       />
 
-      {currentTransaction && (
-        <TransactionDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          transaction={currentTransaction}
-          mode="edit"
-          onSave={handleEditTransaction}
-        />
-      )}
-
-      <TransactionDeleteDialog
-        transaction={currentTransaction}
+      {/* Dialogs */}
+      <TransactionDialog 
+        transaction={selectedTransaction}
+        open={isTransactionDialogOpen}
+        onOpenChange={setIsTransactionDialogOpen}
+        onSave={selectedTransaction ? 
+          (updates) => handleUpdateTransaction(selectedTransaction.id, updates) :
+          handleAddTransaction
+        }
+        clients={clients}
+        campaigns={campaigns}
+        categories={categories}
+      />
+      
+      <TransactionDeleteDialog 
+        transaction={selectedTransaction}
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        onDelete={handleDeleteTransaction}
+        onConfirm={() => selectedTransaction && handleDeleteTransaction(selectedTransaction.id)}
       />
     </div>
   );

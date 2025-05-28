@@ -310,6 +310,36 @@ export type Database = {
           },
         ]
       }
+      TransactionCategory: {
+        Row: {
+          color: string | null
+          createdAt: string | null
+          id: string
+          name: string
+          type: string
+          updatedAt: string | null
+          userId: string
+        }
+        Insert: {
+          color?: string | null
+          createdAt?: string | null
+          id?: string
+          name: string
+          type: string
+          updatedAt?: string | null
+          userId: string
+        }
+        Update: {
+          color?: string | null
+          createdAt?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updatedAt?: string | null
+          userId?: string
+        }
+        Relationships: []
+      }
       User: {
         Row: {
           createdAt: string
@@ -381,7 +411,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_default_categories_for_user: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
