@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
@@ -18,16 +17,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate, calculateROI } from "@/lib/utils";
-import { Calendar, Download, Filter, BarChart3, PieChart, TrendingUp, TrendingDown } from "lucide-react";
-import { LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { formatCurrency } from "@/lib/utils";
+import { Search, Filter, Calendar as CalendarIcon, Download, TrendingUp, TrendingDown, DollarSign, BarChart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { DatePicker } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import {
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from "recharts";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 

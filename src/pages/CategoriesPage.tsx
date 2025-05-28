@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CategoryManager } from "@/components/categories/CategoryManager";
+import CategoryManager from "@/components/categories/CategoryManager";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Search, Plus, Tag, TrendingUp, TrendingDown } from "lucide-react";
