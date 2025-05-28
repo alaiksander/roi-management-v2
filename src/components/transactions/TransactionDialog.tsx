@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Transaction, Campaign, Client, TransactionCategory } from "@/lib/types";
+import { Transaction } from "@/lib/types";
 import { 
   Select, 
   SelectContent, 
@@ -29,16 +29,15 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { mockClients, mockCampaigns } from "@/lib/mock-data";
 
 interface TransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  transaction?: Transaction;
-  campaign?: Campaign;
-  clientId?: string;
-  mode: "add" | "edit";
-  onSave: (transaction: Partial<Transaction>) => void;
+  transaction?: Transaction | null;
+  onSave: (transaction: any) => void;
+  clients: any[];
+  campaigns: any[];
+  categories: any[];
 }
 
 interface TransactionFormValues {
@@ -55,53 +54,19 @@ export function TransactionDialog({
   open,
   onOpenChange,
   transaction,
-  campaign: initialCampaign,
-  clientId: initialClientId,
-  mode,
   onSave,
+  clients,
+  campaigns,
+  categories,
 }: TransactionDialogProps) {
   const { toast } = useToast();
-  const [clients] = useState<Client[]>(mockClients);
-  const [availableCampaigns, setAvailableCampaigns] = useState<Campaign[]>([]);
+  const [availableCampaigns, setAvailableCampaigns] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | undefined>(
-    initialClientId || transaction?.clientId
+    transaction?.clientId
   );
   const [selectedType, setSelectedType] = useState<"income" | "expense">(
     transaction?.type || "income"
   );
-  
-  // Fetch categories from localStorage or use default categories
-  const [categories, setCategories] = useState<TransactionCategory[]>([]);
-  
-  // Get all campaigns for the form initialization
-  const allCampaigns = mockCampaigns;
-
-  // Load categories on component mount
-  useEffect(() => {
-    try {
-      const storedCategories = localStorage.getItem("transactionCategories");
-      if (storedCategories) {
-        setCategories(JSON.parse(storedCategories));
-      } else {
-        // Default categories if none exist in localStorage
-        const defaultCategories: TransactionCategory[] = [
-          { id: "cat-1", name: "Ad Spend", type: "expense" },
-          { id: "cat-2", name: "Advance Payment", type: "income" },
-          { id: "cat-3", name: "Final Payment", type: "income" },
-          { id: "cat-4", name: "Content Creation", type: "expense" },
-          { id: "cat-5", name: "Analytics Fee", type: "expense" },
-          { id: "cat-6", name: "Consulting Fee", type: "both" },
-          { id: "cat-7", name: "Other", type: "both" },
-        ];
-        setCategories(defaultCategories);
-        localStorage.setItem("transactionCategories", JSON.stringify(defaultCategories));
-      }
-    } catch (error) {
-      console.error("Error loading transaction categories:", error);
-      // Fallback to empty categories array
-      setCategories([]);
-    }
-  }, []);
 
   // Filter categories based on selected transaction type
   const filteredCategories = categories.filter(cat => 
@@ -125,8 +90,8 @@ export function TransactionDialog({
         type: "income",
         category: filteredCategories.length > 0 ? filteredCategories[0].name : "",
         description: "",
-        clientId: initialClientId || "",
-        campaignId: initialCampaign?.id || "",
+        clientId: "",
+        campaignId: "",
       };
 
   const form = useForm<TransactionFormValues>({
@@ -138,7 +103,7 @@ export function TransactionDialog({
     const clientId = form.watch("clientId");
     if (clientId) {
       setSelectedClientId(clientId);
-      const filteredCampaigns = allCampaigns.filter(campaign => campaign.clientId === clientId);
+      const filteredCampaigns = campaigns.filter(campaign => campaign.clientId === clientId);
       setAvailableCampaigns(filteredCampaigns);
       
       // If current campaign selection is not valid for the new client, reset it
@@ -150,7 +115,7 @@ export function TransactionDialog({
     } else {
       setAvailableCampaigns([]);
     }
-  }, [form.watch("clientId")]);
+  }, [form.watch("clientId"), campaigns]);
 
   // Watch for type changes to update filtered categories
   useEffect(() => {
@@ -169,13 +134,13 @@ export function TransactionDialog({
   // Initialize available campaigns on component mount
   useEffect(() => {
     if (selectedClientId) {
-      const filteredCampaigns = allCampaigns.filter(campaign => campaign.clientId === selectedClientId);
+      const filteredCampaigns = campaigns.filter(campaign => campaign.clientId === selectedClientId);
       setAvailableCampaigns(filteredCampaigns);
     }
-  }, []);
+  }, [selectedClientId, campaigns]);
 
   const handleSubmit = (values: TransactionFormValues) => {
-    const transactionData: Partial<Transaction> = {
+    const transactionData = {
       ...(transaction?.id ? { id: transaction.id } : {}),
       clientId: values.clientId,
       campaignId: values.campaignId,
@@ -187,10 +152,6 @@ export function TransactionDialog({
     };
 
     onSave(transactionData);
-    toast({
-      title: `${mode === "add" ? "Transaksi berhasil ditambahkan" : "Transaksi berhasil diubah"}`,
-      description: `Transaksi berhasil ${mode === "add" ? "ditambahkan" : "diubah"}.`,
-    });
     onOpenChange(false);
   };
 
@@ -199,10 +160,10 @@ export function TransactionDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === "add" ? "Tambah Transaksi" : "Ubah Transaksi"}
+            {transaction ? "Edit Transaksi" : "Tambah Transaksi"}
           </DialogTitle>
           <DialogDescription>
-            {mode === "add" ? "Tambahkan transaksi baru" : "Ubah detail transaksi"}
+            {transaction ? "Edit detail transaksi" : "Tambahkan transaksi baru"}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -387,7 +348,7 @@ export function TransactionDialog({
                 Batal
               </Button>
               <Button type="submit">
-                {mode === "add" ? "Tambah Transaksi" : "Simpan Perubahan"}
+                {transaction ? "Simpan Perubahan" : "Tambah Transaksi"}
               </Button>
             </DialogFooter>
           </form>

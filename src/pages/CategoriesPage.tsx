@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useLanguage, UI_TEXT } from "@/context/LanguageContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -169,8 +168,8 @@ const CategoriesPage = () => {
   );
 
   // Category type statistics
-  const incomeCategories = filteredCategories.filter(c => c.type === 'income' || c.type === 'both');
-  const expenseCategories = filteredCategories.filter(c => c.type === 'expense' || c.type === 'both');
+  const incomeCategories = categories.filter(c => c.type === 'income' || c.type === 'both');
+  const expenseCategories = categories.filter(c => c.type === 'expense' || c.type === 'both');
 
   const handleAddCategory = (category: any) => {
     addCategoryMutation.mutate(category);
@@ -256,12 +255,7 @@ const CategoriesPage = () => {
       </div>
 
       {/* Category Manager */}
-      <CategoryManager 
-        categories={filteredCategories}
-        onAddCategory={handleAddCategory}
-        onUpdateCategory={handleUpdateCategory}
-        onDeleteCategory={handleDeleteCategory}
-      />
+      <CategoryManager />
     </div>
   );
 };

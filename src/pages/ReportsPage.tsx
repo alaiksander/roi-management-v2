@@ -24,11 +24,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
-import { Search, Filter, Calendar as CalendarIcon, Download, TrendingUp, TrendingDown, DollarSign, BarChart } from "lucide-react";
+import { formatCurrency, calculateROI } from "@/lib/utils";
+import { Search, Filter, Calendar as CalendarIcon, Download, TrendingUp, TrendingDown, DollarSign, BarChart as BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   BarChart as RechartsBarChart,
@@ -39,7 +39,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  PieChart,
+  PieChart as RechartsPieChart,
   Pie,
   Cell,
   LineChart,
@@ -217,7 +217,7 @@ const ReportsPage = () => {
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full sm:w-auto">
-              <Calendar className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4" />
               {format(dateRange.from, "MMM dd")} - {format(dateRange.to, "MMM dd, yyyy")}
             </Button>
           </PopoverTrigger>
@@ -323,7 +323,7 @@ const ReportsPage = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">ROI</CardTitle>
-            <PieChart className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${roi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -393,7 +393,7 @@ const ReportsPage = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={clientData}>
+              <RechartsBarChart data={clientData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -402,7 +402,7 @@ const ReportsPage = () => {
                 <Bar dataKey="income" fill="#22c55e" name="Pemasukan" />
                 <Bar dataKey="expense" fill="#ef4444" name="Pengeluaran" />
                 <Bar dataKey="profit" fill="#3b82f6" name="Keuntungan" />
-              </BarChart>
+              </RechartsBarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
